@@ -1,68 +1,256 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html lang="en">
 
-  <head>
+<head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Investa | {{title}}</title>
-    <link rel="shortcut icon" type="image/jpg" href="https://flowbite.com/docs/images/logo.svg" />
+    <title>TradeSim | {{title}}</title>
+    <link rel="shortcut icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.0/flowbite.min.css" rel="stylesheet" />
-    <script>
-      document.documentElement.classList.add('dark');
-      document.addEventListener('DOMContentLoaded', function () {
-        const searchInput = document.getElementById('search-navbar');
-
-        if (searchInput) {
-          searchInput.addEventListener('keydown', function (event) {
-            if (event.key === 'Enter') {
-              // Retrieve the search term
-              const searchTerm = searchInput.value.trim();
-
-              // Perform your desired action, e.g., redirect to a search results page
-              if (searchTerm) {
-                window.location.href = `/search/${encodeURIComponent(searchTerm)}`;
-              }
-            }
-          });
-        }
-      });
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
     <style>
-          /* Customize the overall scrollbar width */
-          ::-webkit-scrollbar {
-            width: 3px; /* Adjust as needed */
-          }
+        :root {
+            --primary-color: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --secondary-color: #06b6d4;
+            --bg-dark: #0f172a;
+            --bg-darker: #020617;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border-color: #334155;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
 
-          /* Customize the scrollbar track (the background of the scrollbar) */
-          ::-webkit-scrollbar-track {
-            background: #f1f1f1; /* Light gray background */
-          }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-          /* Customize the scrollbar thumb (the draggable part) */
-          ::-webkit-scrollbar-thumb {
-            background: #888; /* Dark gray thumb */
-            border-radius: 0px; /* Optional: rounded corners */
-          }
+        body {
+            background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            color: var(--text-primary);
+        }
 
-          /* Optional: Customize thumb on hover */
-          ::-webkit-scrollbar-thumb:hover {
-            background: #555; /* Darker gray on hover */
-          }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-darker);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Glass Effect */
+        .glass-effect {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Card Styles */
+        .card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.1);
+        }
+
+        /* Button Styles */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #6366f1 100%);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #0891b2 100%);
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(6, 182, 212, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+        }
+
+        /* Navbar */
+        .navbar {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(148, 163, 184, 0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: 260px;
+            transition: all 0.3s ease;
+            z-index: 40;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            margin: 0.25rem 0;
+        }
+
+        .sidebar-link:hover, .sidebar-link.active {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--primary-color);
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* Stats Card */
+        .stat-card {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px rgba(139, 92, 246, 0.2);
+        }
+
+        /* Badge */
+        .badge-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Input Styles */
+        input, select, textarea {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+        }
     </style>
-  </head>
 
-  <body class="bg-gray-900 border-gray-200 dark:bg-gray-900">
+    <script>
+        document.documentElement.classList.add('dark');
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('search-navbar');
+            if (searchInput) {
+                searchInput.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        const searchTerm = searchInput.value.trim();
+                        if (searchTerm) {
+                            window.location.href = `/search/${encodeURIComponent(searchTerm)}`;
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</head>
+
+<body class="antialiased">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.0/flowbite.min.js"></script>
 
-    <!-- Start Top Bar -->
-
-
-    
-    <!-- End Top Bar -->
     {% block website %}
     {% load static %}
     {% endblock %}
+</body>
 
-  </body>
 </html>

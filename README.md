@@ -1,8 +1,17 @@
-# Stock Market Simulator
-Stock Market Simulator buy or sell stocks with real time data with an intreactive and customizable user dashboard.
+# 📈 Investa - Stock Market Simulator
 
-Welcome to Investa! 🌟 Here's how to get started:<br>
-This is a stock market simulator
+A Django-based stock market trading simulator with **full admin control** over stock prices and user balances. Perfect for learning, testing trading strategies, or running simulated trading competitions.
+
+## ✨ Key Features
+
+### For Administrators
+- 🎛️ **Control Stock Prices**: Set and adjust stock prices manually through admin panel
+- 💰 **Manage User Balances**: View, modify, and reset user balances
+- ⚙️ **Configure Settings**: Set default starting balance and trading parameters
+- 📊 **Bulk Actions**: Update multiple stocks or users at once
+- 🔄 **Real-time Updates**: Changes reflect immediately for all users
+
+### For Users
 
 * **Create Your Account:** Sign up to start using Investa.
 * **Demo Money:** Once registered, you'll receive $10,000 in virtual money to begin trading.
@@ -36,23 +45,82 @@ The search page is your go-to for detailed stock information and trading. Here's
 
 ![Search Page](images/searchPage.png)
 
-## Run Locally 
-1. Clone the repository:
-```
+## 🚀 Quick Start
+
+### Local Development
+
+```bash
+# 1. Clone the repository
 git clone https://github.com/sakshamssr/Investa.git
-```
-2. Navigate to the project directory:
-```
 cd Investa
-```
-3. Install dependencies:
-```
+
+# 2. Create virtual environment and install dependencies
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-```
-4. Run the Django development server:
-```
+
+# 3. Run migrations
+python manage.py makemigrations
+python manage.py migrate
+
+# 4. Initialize simulator with default stocks
+python manage.py init_simulator
+
+# 5. Create admin account
+python manage.py createsuperuser
+
+# 6. Collect static files
+python manage.py collectstatic --noinput
+
+# 7. Start development server
 python manage.py runserver
 ```
+
+**Access the app:**
+- Main app: http://127.0.0.1:8000/
+- Admin panel: http://127.0.0.1:8000/admin/
+
+## 🎮 Admin Controls
+
+After logging into `/admin`, you can:
+
+### Control Stock Prices
+1. Navigate to **Stocks** section
+2. Click any stock to edit its price manually
+3. Use bulk actions:
+   - Increase/decrease prices by 10%
+   - Activate/deactivate stocks
+   - Reset price changes
+
+### Manage User Balances
+1. Navigate to **Users** section
+2. View all user balances and holdings
+3. Use bulk actions:
+   - Reset balance to default
+   - Add $1,000 or $5,000 bonus
+   - Or edit individual balances directly
+
+### Configure Settings
+1. Navigate to **Simulator Settings**
+2. Set `default_user_balance` (default: $10,000)
+3. Configure trading fees and other parameters
+
+## ☁️ Deploy to Vercel
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide.
+
+**Quick deploy:**
+1. Push to GitHub
+2. Connect to Vercel
+3. Add environment variables (DATABASE_URL, SECRET_KEY, etc.)
+4. Run migrations on production database
+5. Create admin account and initialize stocks
+
+## 🗄️ Database Models
+
+- **User**: Balance, holdings (stockbuy), watchlist, trading history
+- **Stock**: Symbol, name, current_price, previous_close, is_active
+- **SimulatorSettings**: Global settings like default_user_balance
 5. Access the application by visiting http://localhost:8000 in your web browser.
 ```
 http://localhost:8000

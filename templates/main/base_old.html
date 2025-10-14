@@ -1,0 +1,68 @@
+<!doctype html>
+<html class="no-js" lang="en">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Investa | {{title}}</title>
+    <link rel="shortcut icon" type="image/jpg" href="https://flowbite.com/docs/images/logo.svg" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.0/flowbite.min.css" rel="stylesheet" />
+    <script>
+      document.documentElement.classList.add('dark');
+      document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('search-navbar');
+
+        if (searchInput) {
+          searchInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+              // Retrieve the search term
+              const searchTerm = searchInput.value.trim();
+
+              // Perform your desired action, e.g., redirect to a search results page
+              if (searchTerm) {
+                window.location.href = `/search/${encodeURIComponent(searchTerm)}`;
+              }
+            }
+          });
+        }
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <style>
+          /* Customize the overall scrollbar width */
+          ::-webkit-scrollbar {
+            width: 3px; /* Adjust as needed */
+          }
+
+          /* Customize the scrollbar track (the background of the scrollbar) */
+          ::-webkit-scrollbar-track {
+            background: #f1f1f1; /* Light gray background */
+          }
+
+          /* Customize the scrollbar thumb (the draggable part) */
+          ::-webkit-scrollbar-thumb {
+            background: #888; /* Dark gray thumb */
+            border-radius: 0px; /* Optional: rounded corners */
+          }
+
+          /* Optional: Customize thumb on hover */
+          ::-webkit-scrollbar-thumb:hover {
+            background: #555; /* Darker gray on hover */
+          }
+    </style>
+  </head>
+
+  <body class="bg-gray-900 border-gray-200 dark:bg-gray-900">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.0/flowbite.min.js"></script>
+
+    <!-- Start Top Bar -->
+
+
+    
+    <!-- End Top Bar -->
+    {% block website %}
+    {% load static %}
+    {% endblock %}
+
+  </body>
+</html>
