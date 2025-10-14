@@ -1,9 +1,10 @@
 from django.urls import path
-from .views import home,signup,user_login,createuser,logout,dashboard,stockdetails,removewatchlist,updatestocks,user_portfolio,errorpage,settings
+from .views import home,signup,user_login,createuser,logout,dashboard,stockdetails,removewatchlist,updatestocks,user_portfolio,errorpage,settings,health_check
 
 from .apis import search,watchlist,fetchdetails,graphdata,portfolio,portfoliochart,income,holdings,addtoWatchlist
 
 urlpatterns = [
+    path('health', health_check, name="health"),
     path('',dashboard,name="home"),
     path('signup',signup,name="signup"),
     path('login',user_login,name="login"),

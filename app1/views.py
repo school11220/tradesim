@@ -10,6 +10,11 @@ from .mdate import today
 def home(requests):
     return HttpResponse("Hello World!!")
 
+def health_check(request):
+    """Simple health check endpoint for debugging"""
+    import sys
+    return HttpResponse(f"OK - Django {sys.version} - Database: {request.META.get('HTTP_HOST', 'unknown')}")
+
 def signup(requests):
     data={"isusername":"hidden","isemail":"hidden"}
     return render(requests,"login/signup.html",data)
