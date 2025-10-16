@@ -194,8 +194,10 @@ class Team(models.Model):
     @property
     def rank(self):
         """Get team's rank in the event"""
-        teams = list(self.event.teams.filter(is_active=True, is_disqualified=False).order_by('-portfolio_value'))
+        # Get all active teams and sort by portfolio value in Python
+        teams = self.event.teams.filter(is_active=True, is_disqualified=False)
+        ranked_teams = sorted(teams, key=lambda t: t.portfolio_value, reverse=True)
         try:
-            return teams.index(self) + 1
+            return ranked_teams.index(self) + 1
         except ValueError:
             return None
