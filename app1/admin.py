@@ -78,14 +78,14 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
-    """Admin interface for controlling stock prices"""
-    # Temporarily disable custom template to diagnose issue
-    # change_list_template = 'admin/stock_changelist.html'
-    list_display = ('symbol', 'name', 'current_price_display', 'previous_close', 'is_active', 'last_updated')
-    list_filter = ('is_active', 'last_updated')
+    """Admin interface for controlling stock prices - MINIMAL VERSION FOR DEBUGGING"""
+    list_display = ('symbol', 'name', 'current_price', 'is_active')
+    list_filter = ('is_active',)
     search_fields = ('symbol', 'name')
     ordering = ('symbol',)
-    list_editable = ('is_active',)
+    
+    # NO custom methods, NO actions - absolute minimum
+    pass
     
     fieldsets = (
         ('Stock Information', {
