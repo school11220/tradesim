@@ -87,55 +87,55 @@
             <h2 class="text-2xl font-bold text-slate-200 mb-4">Event Details</h2>
             <div class="grid md:grid-cols-3 gap-6">
                 <div>
-                    <div class="text-sm text-slate-400 mb-1">Event Name</div>
-                    <div class="text-lg font-semibold text-slate-200">{{ event.name }}</div>
+                    <div class="text-sm text-slate-300 mb-1">Event Name</div>
+                    <div class="text-lg font-semibold text-white">{{ event.name }}</div>
                 </div>
                 <div>
-                    <div class="text-sm text-slate-400 mb-1">Event Period</div>
-                    <div class="text-lg text-slate-200">
+                    <div class="text-sm text-slate-300 mb-1">Event Period</div>
+                    <div class="text-lg text-white">
                         {{ event.start_time|date:"M d, Y H:i" }} - {{ event.end_time|date:"M d, Y H:i" }}
                     </div>
                 </div>
                 <div>
-                    <div class="text-sm text-slate-400 mb-1">Initial Capital</div>
-                    <div class="text-lg font-semibold text-green-400">${{ initial_capital|floatformat:2 }}</div>
+                    <div class="text-sm text-slate-300 mb-1">Initial Capital</div>
+                    <div class="text-lg font-semibold text-green-300">${{ initial_capital|floatformat:2 }}</div>
                 </div>
             </div>
         </div>
 
         <!-- Current Holdings -->
         <div class="glass-effect rounded-xl p-6 mb-8">
-            <h2 class="text-2xl font-bold text-slate-200 mb-4">Current Holdings</h2>
+            <h2 class="text-2xl font-bold text-white mb-4">Current Holdings</h2>
             {% if portfolio %}
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead>
-                        <tr class="border-b border-slate-700">
-                            <th class="text-left py-3 px-4 text-slate-400 font-medium">Symbol</th>
-                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Shares</th>
-                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Avg Price</th>
-                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Current Price</th>
-                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Current Value</th>
-                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Profit/Loss</th>
+                        <tr class="border-b border-slate-600">
+                            <th class="text-left py-3 px-4 text-slate-300 font-semibold">Symbol</th>
+                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Shares</th>
+                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Avg Price</th>
+                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Current Price</th>
+                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Current Value</th>
+                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Profit/Loss</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for symbol, data in portfolio.items %}
-                        <tr class="border-b border-slate-800 hover:bg-slate-800/30 transition-colors">
+                        <tr class="border-b border-slate-700 hover:bg-slate-700/50 transition-colors">
                             <td class="py-3 px-4">
-                                <div class="font-bold text-purple-400">{{ symbol }}</div>
-                                {% if data.name %}<div class="text-xs text-slate-400">{{ data.name }}</div>{% endif %}
+                                <div class="font-bold text-purple-300">{{ symbol }}</div>
+                                {% if data.name %}<div class="text-xs text-slate-300">{{ data.name }}</div>{% endif %}
                             </td>
-                            <td class="py-3 px-4 text-right text-slate-200">{{ data.quantity }}</td>
-                            <td class="py-3 px-4 text-right text-slate-200">${{ data.avg_price|floatformat:2 }}</td>
-                            <td class="py-3 px-4 text-right text-slate-200">
+                            <td class="py-3 px-4 text-right text-white">{{ data.quantity }}</td>
+                            <td class="py-3 px-4 text-right text-white">${{ data.avg_price|floatformat:2 }}</td>
+                            <td class="py-3 px-4 text-right text-white">
                                 {% if data.current_price %}
                                     ${{ data.current_price|floatformat:2 }}
                                 {% else %}
                                     -
                                 {% endif %}
                             </td>
-                            <td class="py-3 px-4 text-right font-semibold text-blue-400">
+                            <td class="py-3 px-4 text-right font-semibold text-blue-300">
                                 ${{ data.current_value|default:0|floatformat:2 }}
                             </td>
                             <td class="py-3 px-4 text-right font-semibold">
@@ -156,7 +156,7 @@
                 </table>
             </div>
             {% else %}
-            <div class="text-center py-8 text-slate-400">
+            <div class="text-center py-8 text-slate-300">
                 <div class="text-4xl mb-4">📊</div>
                 <p>No holdings yet. Start trading to build your portfolio!</p>
             </div>
@@ -165,41 +165,41 @@
 
         <!-- Recent Trades -->
         <div class="glass-effect rounded-xl p-6">
-            <h2 class="text-2xl font-bold text-slate-200 mb-4">Recent Trades</h2>
+            <h2 class="text-2xl font-bold text-white mb-4">Recent Trades</h2>
             {% if recent_trades %}
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead>
-                        <tr class="border-b border-slate-700">
-                            <th class="text-left py-3 px-4 text-slate-400 font-medium">Time</th>
-                            <th class="text-left py-3 px-4 text-slate-400 font-medium">Type</th>
-                            <th class="text-left py-3 px-4 text-slate-400 font-medium">Symbol</th>
-                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Quantity</th>
-                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Price</th>
-                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Total</th>
+                        <tr class="border-b border-slate-600">
+                            <th class="text-left py-3 px-4 text-slate-300 font-semibold">Time</th>
+                            <th class="text-left py-3 px-4 text-slate-300 font-semibold">Type</th>
+                            <th class="text-left py-3 px-4 text-slate-300 font-semibold">Symbol</th>
+                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Quantity</th>
+                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Price</th>
+                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Total</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for trade in recent_trades reversed %}
-                        <tr class="border-b border-slate-800 hover:bg-slate-800/30 transition-colors">
-                            <td class="py-3 px-4 text-slate-300 text-sm">{{ trade.time }}</td>
+                        <tr class="border-b border-slate-700 hover:bg-slate-700/50 transition-colors">
+                            <td class="py-3 px-4 text-slate-100 text-sm">{{ trade.time }}</td>
                             <td class="py-3 px-4">
                                 <span class="px-2 py-1 rounded text-xs font-semibold 
-                                    {% if trade.type == 'BUY' %}bg-green-500/20 text-green-400{% else %}bg-red-500/20 text-red-400{% endif %}">
+                                    {% if trade.type == 'BUY' %}bg-green-500/20 text-green-300{% else %}bg-red-500/20 text-red-300{% endif %}">
                                     {{ trade.type }}
                                 </span>
                             </td>
-                            <td class="py-3 px-4 font-bold text-purple-400">{{ trade.symbol }}</td>
-                            <td class="py-3 px-4 text-right text-slate-200">{{ trade.quantity }}</td>
-                            <td class="py-3 px-4 text-right text-slate-200">${{ trade.price|floatformat:2 }}</td>
-                            <td class="py-3 px-4 text-right font-semibold text-slate-200">${{ trade.total|floatformat:2 }}</td>
+                            <td class="py-3 px-4 font-bold text-purple-300">{{ trade.symbol }}</td>
+                            <td class="py-3 px-4 text-right text-white">{{ trade.quantity }}</td>
+                            <td class="py-3 px-4 text-right text-white">${{ trade.price|floatformat:2 }}</td>
+                            <td class="py-3 px-4 text-right font-semibold text-white">${{ trade.total|floatformat:2 }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
             {% else %}
-            <div class="text-center py-8 text-slate-400">
+            <div class="text-center py-8 text-slate-300">
                 <div class="text-4xl mb-4">📈</div>
                 <p>No trades yet. Start trading when the event is active!</p>
             </div>
@@ -207,7 +207,7 @@
         </div>
 
         <!-- Privacy Notice -->
-        <div class="mt-8 text-center text-sm text-slate-500">
+        <div class="mt-8 text-center text-sm text-slate-300">
             <p>🔒 This dashboard shows only your team's data. Other teams cannot see your portfolio or trades.</p>
         </div>
     </div>
