@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import users, Stock, SimulatorSettings
+from .models import users, Stock, SimulatorSettings, Event, Team
 from django.utils.html import format_html
+from django.utils import timezone
 
 # Register your models here.
 # ₹
@@ -176,7 +177,235 @@ class SimulatorSettingsAdmin(admin.ModelAdmin):
     readonly_fields = ('last_updated',)
 
 
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    """Admin interface for managing trading events"""
+    list_display = ('name', 'status_display', 'start_time', 'end_time', 'initial_capital', 'team_count', 'is_active_display', 'registration_status')
+    list_filter = ('is_active', 'registration_open', 'start_time')
+    search_fields = ('name', 'description')
+    ordering = ('-start_time',)
+    
+    fieldsets = (
+        ('Event Details', {
+            'fields': ('name', 'description')
+        }),
+        ('Schedule', {
+            'fields': ('start_time', 'end_time')
+        }),
+        ('Trading Configuration', {
+            'fields': ('initial_capital', 'allow_short_selling', 'max_trades_per_team', 'trading_fee_percentage')
+        }),
+        ('Status', {
+            'fields': ('is_active', 'registration_open'),
+            'description': 'Control event and registration status'
+        }),
+    )
+    
+    actions = ['start_event', 'stop_event', 'open_registration', 'close_registration']
+    
+    def status_display(self, obj):
+        """Display event status with color"""
+        status = obj.status
+        colors = {
+            'LIVE': 'green',
+            'UPCOMING': 'blue',
+            'ENDED': 'gray',
+            'SCHEDULED': 'orange'
+        }
+        return format_html(
+            '<strong style="color: {};">{}</strong>',
+            colors.get(status, 'black'),
+            status
+        )
+    status_display.short_description = 'Status'
+    
+    def is_active_display(self, obj):
+        """Display active status"""
+        if obj.is_active:
+            return format_html('<span style="color: green;">✓ Active</span>')
+        return format_html('<span style="color: gray;">○ Inactive</span>')
+    is_active_display.short_description = 'Active'
+    
+    def registration_status(self, obj):
+        """Display registration status"""
+        if obj.registration_open:
+            return format_html('<span style="color: green;">✓ Open</span>')
+        return format_html('<span style="color: red;">✗ Closed</span>')
+    registration_status.short_description = 'Registration'
+    
+    def team_count(self, obj):
+        """Display number of registered teams"""
+        count = obj.teams.count()
+        return format_html('<strong>{}</strong> teams', count)
+    team_count.short_description = 'Teams'
+    
+    def start_event(self, request, queryset):
+        """Start selected events"""
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} event(s) started successfully!')
+    start_event.short_description = "▶️ START selected events"
+    
+    def stop_event(self, request, queryset):
+        """Stop selected events"""
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} event(s) stopped successfully!')
+    stop_event.short_description = "⏸️ STOP selected events"
+    
+    def open_registration(self, request, queryset):
+        """Open registration for selected events"""
+        updated = queryset.update(registration_open=True)
+        self.message_user(request, f'Registration opened for {updated} event(s)!')
+    open_registration.short_description = "🔓 Open registration"
+    
+    def close_registration(self, request, queryset):
+        """Close registration for selected events"""
+        updated = queryset.update(registration_open=False)
+        self.message_user(request, f'Registration closed for {updated} event(s)!')
+    close_registration.short_description = "🔒 Close registration"
+
+
+@admin.register(Team)
+class TeamAdmin(admin.ModelAdmin):
+    """Admin interface for monitoring teams (ADMIN ONLY - Teams can't see each other)"""
+    list_display = ('team_code', 'team_name', 'event', 'leader_name', 'portfolio_value_display', 'profit_loss_display', 'total_trades', 'is_active_display', 'last_trade_time')
+    list_filter = ('event', 'is_active', 'is_disqualified', 'registration_time')
+    search_fields = ('team_code', 'team_name', 'leader_name', 'leader_email')
+    ordering = ('-registration_time',)
+    readonly_fields = ('team_code', 'registration_time', 'portfolio_value_display', 'profit_loss_display', 'profit_loss_percent_display', 'rank_display', 'trade_history_display')
+    
+    fieldsets = (
+        ('Team Information', {
+            'fields': ('event', 'team_code', 'team_name', 'password')
+        }),
+        ('Team Leader', {
+            'fields': ('leader_name', 'leader_email')
+        }),
+        ('Team Members', {
+            'fields': ('members',)
+        }),
+        ('Portfolio Overview', {
+            'fields': ('portfolio_value_display', 'balance', 'profit_loss_display', 'profit_loss_percent_display', 'rank_display'),
+            'description': 'Real-time portfolio metrics'
+        }),
+        ('Holdings & Trades', {
+            'fields': ('portfolio', 'total_trades', 'last_trade_time', 'trade_history_display'),
+            'classes': ('collapse',)
+        }),
+        ('Status', {
+            'fields': ('is_active', 'is_disqualified', 'disqualification_reason')
+        }),
+        ('Timestamps', {
+            'fields': ('registration_time',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    actions = ['reset_balance', 'disqualify_team', 'activate_team', 'view_detailed_portfolio']
+    
+    def portfolio_value_display(self, obj):
+        """Display total portfolio value"""
+        value = obj.portfolio_value
+        color = 'green' if value >= float(obj.event.initial_capital) else 'red'
+        return format_html(
+            '<strong style="color: {}; font-size: 1.1em;">${:,.2f}</strong>',
+            color,
+            value
+        )
+    portfolio_value_display.short_description = 'Portfolio Value'
+    
+    def profit_loss_display(self, obj):
+        """Display profit/loss amount"""
+        pl = obj.profit_loss
+        color = 'green' if pl >= 0 else 'red'
+        symbol = '+' if pl >= 0 else ''
+        return format_html(
+            '<strong style="color: {};">{}{:,.2f}</strong>',
+            color,
+            symbol,
+            pl
+        )
+    profit_loss_display.short_description = 'Profit/Loss'
+    
+    def profit_loss_percent_display(self, obj):
+        """Display profit/loss percentage"""
+        percent = obj.profit_loss_percent
+        color = 'green' if percent >= 0 else 'red'
+        symbol = '+' if percent >= 0 else ''
+        return format_html(
+            '<strong style="color: {};">{}{:.2f}%</strong>',
+            color,
+            symbol,
+            percent
+        )
+    profit_loss_percent_display.short_description = 'P/L %'
+    
+    def rank_display(self, obj):
+        """Display team rank"""
+        rank = obj.rank
+        if rank:
+            medal = '🥇' if rank == 1 else '🥈' if rank == 2 else '🥉' if rank == 3 else f'#{rank}'
+            return format_html('<strong style="font-size: 1.2em;">{}</strong>', medal)
+        return '-'
+    rank_display.short_description = 'Rank'
+    
+    def is_active_display(self, obj):
+        """Display active status"""
+        if obj.is_disqualified:
+            return format_html('<span style="color: red;">❌ Disqualified</span>')
+        if obj.is_active:
+            return format_html('<span style="color: green;">✓ Active</span>')
+        return format_html('<span style="color: gray;">○ Inactive</span>')
+    is_active_display.short_description = 'Status'
+    
+    def trade_history_display(self, obj):
+        """Display formatted trade history"""
+        if not obj.trade_history:
+            return "No trades yet"
+        
+        html = '<table style="width:100%; border-collapse: collapse;">'
+        html += '<tr style="background: #f0f0f0;"><th>Time</th><th>Type</th><th>Stock</th><th>Qty</th><th>Price</th><th>Total</th></tr>'
+        
+        for trade in obj.trade_history[-20:]:  # Last 20 trades
+            html += f'''
+            <tr>
+                <td>{trade.get("time", "")}</td>
+                <td style="color: {'green' if trade.get('type') == 'BUY' else 'red'};">{trade.get("type", "")}</td>
+                <td><strong>{trade.get("symbol", "")}</strong></td>
+                <td>{trade.get("quantity", 0)}</td>
+                <td>${trade.get("price", 0):.2f}</td>
+                <td>${trade.get("total", 0):.2f}</td>
+            </tr>
+            '''
+        html += '</table>'
+        return format_html(html)
+    trade_history_display.short_description = 'Recent Trades'
+    
+    def reset_balance(self, request, queryset):
+        """Reset teams to initial capital"""
+        for team in queryset:
+            team.balance = team.event.initial_capital
+            team.portfolio = {}
+            team.trade_history = []
+            team.total_trades = 0
+            team.save()
+        self.message_user(request, f'{queryset.count()} team(s) reset to initial capital!')
+    reset_balance.short_description = "🔄 Reset to initial capital"
+    
+    def disqualify_team(self, request, queryset):
+        """Disqualify selected teams"""
+        updated = queryset.update(is_disqualified=True, is_active=False)
+        self.message_user(request, f'{updated} team(s) disqualified!')
+    disqualify_team.short_description = "❌ Disqualify teams"
+    
+    def activate_team(self, request, queryset):
+        """Activate selected teams"""
+        updated = queryset.update(is_disqualified=False, is_active=True)
+        self.message_user(request, f'{updated} team(s) activated!')
+    activate_team.short_description = "✓ Activate teams"
+
+
 # Customize admin site headers
-admin.site.site_header = "TradeSim Admin Panel"
-admin.site.site_title = "TradeSim Control Center"
+admin.site.site_header = "TradeSim Event Control Center"
+admin.site.site_title = "TradeSim Admin"
+admin.site.index_title = "Trading Competition Management"
 admin.site.index_title = "Market Control Dashboard"
