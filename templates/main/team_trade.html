@@ -265,6 +265,11 @@
         transition: all 0.3s;
         text-align: center;
     }
+
+    .quantity-input:disabled {
+        background-color: #f8f9fa;
+        cursor: not-allowed;
+    }
     
     .quantity-input:focus {
         outline: none;
@@ -422,7 +427,6 @@
     {% endif %}
     
     <div class="trade-layout">
-        <!-- Stock Information Panel -->
         <div class="stock-panel">
             <div class="stock-header">
                 <span class="symbol-badge">STOCK</span>
@@ -495,7 +499,6 @@
             {% endif %}
         </div>
         
-        <!-- Trading Panel -->
         <div class="trade-panel">
             <h2 class="trade-title">Trade {{ stock.symbol }}</h2>
             
@@ -508,7 +511,6 @@
                 </button>
             </div>
             
-            <!-- Buy Form -->
             <form method="POST" class="trade-form active" id="buyForm">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="buy">
@@ -522,7 +524,7 @@
                                id="buyQuantity" 
                                min="1" 
                                value="1"
-                               oninput="updateBuyCost()"
+                               oninput="updateTradeSummary('buy')"
                                required>
                     </div>
                     <div class="quick-buttons">
@@ -553,7 +555,6 @@
                 </button>
             </form>
             
-            <!-- Sell Form -->
             <form method="POST" class="trade-form" id="sellForm">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="sell">
@@ -568,7 +569,8 @@
                                min="1" 
                                max="{{ holding.quantity }}"
                                value="{% if holding.quantity > 0 %}1{% else %}0{% endif %}"
-                               oninput="updateSellCost()"
+                               oninput="updateTradeSummary('sell')"
+                               {% if holding.quantity == 0 %}disabled{% endif %}
                                required>
                     </div>
                     {% if holding.quantity > 0 %}
@@ -576,7 +578,7 @@
                         {% if holding.quantity >= 1 %}<button type="button" class="quick-btn" onclick="setQuantity('sell', 1)">1</button>{% endif %}
                         {% if holding.quantity >= 10 %}<button type="button" class="quick-btn" onclick="setQuantity('sell', 10)">10</button>{% endif %}
                         {% if holding.quantity >= 50 %}<button type="button" class="quick-btn" onclick="setQuantity('sell', 50)">50</button>{% endif %}
-                        <button type="button" class="quick-btn" onclick="setQuantity('sell', {{ holding.quantity }})">All</button>
+                        <button type="button" class="quick-btn" onclick="setQuantity('sell', { holding.quantity })">All</button>
                     </div>
                     {% endif %}
                 </div>
@@ -611,55 +613,54 @@
 </div>
 
 <script>
-    const stockPrice = {{ stock.current_price }};
-    
     function switchTab(tab) {
-        // Update tab buttons
-        document.getElementById('buyTab').classList.remove('active');
-        document.getElementById('sellTab').classList.remove('active');
+        document.getElementById('buyTab').classList.toggle('active', tab === 'buy');
+        document.getElementById('sellTab').classList.toggle('active', tab === 'sell');
         
-        // Update forms
-        document.getElementById('buyForm').classList.remove('active');
-        document.getElementById('sellForm').classList.remove('active');
-        
-        if (tab === 'buy') {
-            document.getElementById('buyTab').classList.add('active');
-            document.getElementById('buyForm').classList.add('active');
-        } else {
-            document.getElementById('sellTab').classList.add('active');
-            document.getElementById('sellForm').classList.add('active');
-        }
+        document.getElementById('buyForm').classList.toggle('active', tab === 'buy');
+        document.getElementById('sellForm').classList.toggle('active', tab === 'sell');
     }
     
     function setQuantity(type, value) {
-        const input = document.getElementById(type + 'Quantity');
+        const input = document.getElementById(`${type}Quantity`);
         input.value = value;
+        updateTradeSummary(type);
+    }
+
+    function formatCurrency(number) {
+        // Corrected object syntax with colons and commas
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD'
+        }).format(number);
+    }
+    
+    function updateTradeSummary(type) {
+        // Get the current price directly from the DOM to avoid stale data
+        const priceElement = document.getElementById('currentPrice');
+        const stockPrice = parseFloat(priceElement.textContent.replace('$', '').replace(/,/g, ''));
+
+        // Get the quantity input element
+        const quantityInput = document.getElementById(`${type}Quantity`);
         
-        if (type === 'buy') {
-            updateBuyCost();
-        } else {
-            updateSellCost();
+        // Validate quantity: ensure it's a number and greater than 0
+        let quantity = parseInt(quantityInput.value, 10);
+        if (isNaN(quantity) || quantity < 0) {
+            quantity = 0;
         }
-    }
-    
-    function updateBuyCost() {
-        const quantity = parseInt(document.getElementById('buyQuantity').value) || 0;
+        
         const total = quantity * stockPrice;
         
-        document.getElementById('buyShares').textContent = quantity;
-        document.getElementById('buyTotal').textContent = '$' + total.toFixed(2);
+        // Update the summary display
+        document.getElementById(`${type}Shares`).textContent = quantity;
+        document.getElementById(`${type}Total`).textContent = formatCurrency(total);
     }
     
-    function updateSellCost() {
-        const quantity = parseInt(document.getElementById('sellQuantity').value) || 0;
-        const total = quantity * stockPrice;
-        
-        document.getElementById('sellShares').textContent = quantity;
-        document.getElementById('sellTotal').textContent = '$' + total.toFixed(2);
-    }
-    
-    // Auto-scroll to alert if present
+    // Run on page load to set initial values correctly
     window.addEventListener('load', function() {
+        updateTradeSummary('buy');
+        updateTradeSummary('sell');
+
         const alert = document.querySelector('.alert');
         if (alert) {
             alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
