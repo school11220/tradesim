@@ -28,8 +28,7 @@ SECRET_KEY = os.environ.get(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Temporarily enable DEBUG to see the actual error
-DEBUG = True  # os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
 # Allow hosts from environment or default to none (during development)
 allowed_hosts_str = os.environ.get('DJANGO_ALLOWED_HOSTS', '')
@@ -39,7 +38,7 @@ else:
     ALLOWED_HOSTS = []
 
 # Always allow Vercel domains and common hosts
-ALLOWED_HOSTS.extend(['.vercel.app', 'localhost', '127.0.0.1', '*'])
+ALLOWED_HOSTS.extend(['.vercel.app', 'localhost', '127.0.0.1'])
 
 # CSRF trusted origins for Vercel
 CSRF_TRUSTED_ORIGINS = [
