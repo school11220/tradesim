@@ -1,9 +1,122 @@
+# 🚨 PRODUCTION DATABASE FIX GUIDE
+
+## Problem
+You're getting errors like:
+- `column app1_event.allow_short_selling does not exist`
+- Errors loading stocks
+- Errors loading teams
+- Admin pages showing programming errors
+
+## Root Cause
+The database migrations weren't applied properly in production. Your production database is missing several columns.
+
+---
+
+## ✅ SOLUTION (Follow in Order)
+
+### **STEP 1: Fix Database Schema**
+
+Go to your **Neon SQL Console** and run this script first:
+
+```sql
 -- ============================================================
--- PRODUCTION DATABASE INITIALIZATION SQL
--- Run this entire script in your Neon SQL Console
+-- PRODUCTION DATABASE FIX - Add Missing Columns
+-- Run this FIRST, BEFORE production_init.sql
 -- ============================================================
 
--- Step 1: Create the Event
+-- Fix Event table - add missing columns
+DO $$ 
+BEGIN
+    -- Add allow_short_selling
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='app1_event' AND column_name='allow_short_selling') THEN
+        ALTER TABLE app1_event ADD COLUMN allow_short_selling BOOLEAN DEFAULT false;
+    END IF;
+    
+    -- Add max_trades_per_team
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='app1_event' AND column_name='max_trades_per_team') THEN
+        ALTER TABLE app1_event ADD COLUMN max_trades_per_team INTEGER NULL;
+    END IF;
+    
+    -- Add trading_fee_percentage
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='app1_event' AND column_name='trading_fee_percentage') THEN
+        ALTER TABLE app1_event ADD COLUMN trading_fee_percentage NUMERIC(5,2) DEFAULT 0.00;
+    END IF;
+    
+    -- Remove status column if it exists (it's a property, not a field)
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name='app1_event' AND column_name='status') THEN
+        ALTER TABLE app1_event DROP COLUMN status;
+    END IF;
+END $$;
+
+-- Fix Stock table - add sector
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='app1_stock' AND column_name='sector') THEN
+        ALTER TABLE app1_stock ADD COLUMN sector VARCHAR(50) DEFAULT 'Technology';
+    END IF;
+END $$;
+
+-- Verify
+SELECT 'VERIFICATION' as status;
+SELECT COUNT(*) as event_columns FROM information_schema.columns WHERE table_name = 'app1_event';
+SELECT COUNT(*) as stock_columns FROM information_schema.columns WHERE table_name = 'app1_stock';
+```
+
+### **STEP 2: Initialize Data**
+
+After Step 1 completes successfully, run the `production_init.sql` script to add stocks and event.
+
+---
+
+## 🎯 Quick Fix (Copy-Paste Ready)
+
+Just copy this entire script and run it in Neon SQL Console:
+
+```sql
+-- ============================================================
+-- COMPLETE PRODUCTION FIX + INITIALIZATION
+-- Copy and paste this ENTIRE script
+-- ============================================================
+
+-- PART 1: Fix Schema
+-- ============================================================
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='app1_event' AND column_name='allow_short_selling') THEN
+        ALTER TABLE app1_event ADD COLUMN allow_short_selling BOOLEAN DEFAULT false;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='app1_event' AND column_name='max_trades_per_team') THEN
+        ALTER TABLE app1_event ADD COLUMN max_trades_per_team INTEGER NULL;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='app1_event' AND column_name='trading_fee_percentage') THEN
+        ALTER TABLE app1_event ADD COLUMN trading_fee_percentage NUMERIC(5,2) DEFAULT 0.00;
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name='app1_event' AND column_name='status') THEN
+        ALTER TABLE app1_event DROP COLUMN status;
+    END IF;
+END $$;
+
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='app1_stock' AND column_name='sector') THEN
+        ALTER TABLE app1_stock ADD COLUMN sector VARCHAR(50) DEFAULT 'Technology';
+    END IF;
+END $$;
+
+-- PART 2: Add Event
 -- ============================================================
 INSERT INTO app1_event (name, description, start_time, end_time, initial_capital, registration_open, is_active, allow_short_selling, max_trades_per_team, trading_fee_percentage, created_at, updated_at)
 VALUES (
@@ -21,7 +134,7 @@ VALUES (
     NOW()
 ) ON CONFLICT DO NOTHING;
 
--- Step 2: Create Settings
+-- PART 3: Add Settings
 -- ============================================================
 INSERT INTO app1_simulatorsettings (setting_name, setting_value, description)
 VALUES 
@@ -29,10 +142,10 @@ VALUES
     ('default_team_balance', '100000', 'Default balance for new teams')
 ON CONFLICT (setting_name) DO NOTHING;
 
--- Step 3: Create All 63 Stocks
+-- PART 4: Add All 63 Stocks
 -- ============================================================
 
--- Technology Stocks (9 stocks)
+-- Technology Stocks
 INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, price_change, price_change_percent, volume, market_cap, is_active, last_updated) VALUES
 ('AAPL', 'Apple Inc.', 'Technology', 150.50, 148.20, 2.30, 1.55, 50000000, 2500000000000, true, NOW()),
 ('MSFT', 'Microsoft Corporation', 'Technology', 320.75, 318.50, 2.25, 0.71, 25000000, 2400000000000, true, NOW()),
@@ -44,7 +157,7 @@ INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, pri
 ('ORCL', 'Oracle Corporation', 'Technology', 98.45, 97.20, 1.25, 1.29, 8000000, 270000000000, true, NOW()),
 ('AMD', 'Advanced Micro Devices', 'Technology', 112.45, 110.80, 1.65, 1.49, 35000000, 180000000000, true, NOW());
 
--- Healthcare Stocks (9 stocks)
+-- Healthcare Stocks
 INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, price_change, price_change_percent, volume, market_cap, is_active, last_updated) VALUES
 ('JNJ', 'Johnson & Johnson', 'Healthcare', 165.40, 164.20, 1.20, 0.73, 10000000, 435000000000, true, NOW()),
 ('UNH', 'UnitedHealth Group', 'Healthcare', 485.90, 483.50, 2.40, 0.50, 3000000, 460000000000, true, NOW()),
@@ -56,7 +169,7 @@ INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, pri
 ('LLY', 'Eli Lilly and Company', 'Healthcare', 585.25, 582.40, 2.85, 0.49, 3000000, 555000000000, true, NOW()),
 ('BMY', 'Bristol-Myers Squibb', 'Healthcare', 58.90, 58.40, 0.50, 0.86, 9000000, 120000000000, true, NOW());
 
--- Financial Stocks (9 stocks)
+-- Financial Stocks
 INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, price_change, price_change_percent, volume, market_cap, is_active, last_updated) VALUES
 ('JPM', 'JPMorgan Chase & Co.', 'Financial', 145.80, 144.50, 1.30, 0.90, 12000000, 425000000000, true, NOW()),
 ('BAC', 'Bank of America Corp', 'Financial', 32.45, 32.10, 0.35, 1.09, 45000000, 260000000000, true, NOW()),
@@ -68,7 +181,7 @@ INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, pri
 ('AXP', 'American Express', 'Financial', 175.30, 174.20, 1.10, 0.63, 3000000, 130000000000, true, NOW()),
 ('C', 'Citigroup Inc.', 'Financial', 52.80, 52.40, 0.40, 0.76, 15000000, 100000000000, true, NOW());
 
--- Consumer Stocks (9 stocks)
+-- Consumer Stocks
 INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, price_change, price_change_percent, volume, market_cap, is_active, last_updated) VALUES
 ('AMZN', 'Amazon.com Inc.', 'Consumer', 135.60, 134.20, 1.40, 1.04, 50000000, 1400000000000, true, NOW()),
 ('TSLA', 'Tesla Inc.', 'Consumer', 242.85, 240.50, 2.35, 0.98, 100000000, 770000000000, true, NOW()),
@@ -80,7 +193,7 @@ INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, pri
 ('LOW', 'Lowe''s Companies', 'Consumer', 225.30, 224.50, 0.80, 0.36, 3000000, 140000000000, true, NOW()),
 ('COST', 'Costco Wholesale', 'Consumer', 565.80, 564.20, 1.60, 0.28, 2000000, 250000000000, true, NOW());
 
--- Industrial Stocks (9 stocks)
+-- Industrial Stocks
 INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, price_change, price_change_percent, volume, market_cap, is_active, last_updated) VALUES
 ('BA', 'Boeing Company', 'Industrial', 185.45, 184.30, 1.15, 0.62, 8000000, 115000000000, true, NOW()),
 ('CAT', 'Caterpillar Inc.', 'Industrial', 285.90, 284.50, 1.40, 0.49, 3000000, 150000000000, true, NOW()),
@@ -92,7 +205,7 @@ INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, pri
 ('RTX', 'Raytheon Technologies', 'Industrial', 92.65, 92.30, 0.35, 0.38, 5000000, 135000000000, true, NOW()),
 ('DE', 'Deere & Company', 'Industrial', 385.70, 384.90, 0.80, 0.21, 1500000, 110000000000, true, NOW());
 
--- Energy Stocks (9 stocks)
+-- Energy Stocks
 INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, price_change, price_change_percent, volume, market_cap, is_active, last_updated) VALUES
 ('XOM', 'Exxon Mobil Corporation', 'Energy', 108.45, 107.80, 0.65, 0.60, 20000000, 450000000000, true, NOW()),
 ('CVX', 'Chevron Corporation', 'Energy', 155.70, 155.10, 0.60, 0.39, 8000000, 295000000000, true, NOW()),
@@ -104,7 +217,7 @@ INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, pri
 ('VLO', 'Valero Energy', 'Energy', 135.90, 135.50, 0.40, 0.30, 3000000, 48000000000, true, NOW()),
 ('PSX', 'Phillips 66', 'Energy', 125.70, 125.40, 0.30, 0.24, 2500000, 57000000000, true, NOW());
 
--- Communication Stocks (9 stocks)
+-- Communication Stocks
 INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, price_change, price_change_percent, volume, market_cap, is_active, last_updated) VALUES
 ('T', 'AT&T Inc.', 'Communication', 18.45, 18.35, 0.10, 0.54, 40000000, 130000000000, true, NOW()),
 ('VZ', 'Verizon Communications', 'Communication', 42.80, 42.60, 0.20, 0.47, 20000000, 180000000000, true, NOW()),
@@ -113,8 +226,7 @@ INSERT INTO app1_stock (symbol, name, sector, current_price, previous_close, pri
 ('NFLX', 'Netflix Inc.', 'Communication', 425.70, 424.90, 0.80, 0.19, 8000000, 185000000000, true, NOW()),
 ('TMUS', 'T-Mobile US Inc.', 'Communication', 155.40, 155.10, 0.30, 0.19, 5000000, 185000000000, true, NOW());
 
--- ============================================================
--- VERIFICATION: Check what was created
+-- VERIFICATION
 -- ============================================================
 SELECT 'Events Created:' as info, COUNT(*) as count FROM app1_event
 UNION ALL
@@ -125,14 +237,34 @@ UNION ALL
 SELECT 'Active Stocks:', COUNT(*) FROM app1_stock WHERE is_active = true;
 
 -- ============================================================
--- SUCCESS! 
--- You should see:
--- - 1 Event
--- - 2 Settings
--- - 63 Stocks (all active)
--- 
--- Next steps:
--- 1. Go to https://tradesim-lyart.vercel.app/team/signup
--- 2. Create a test team
--- 3. Start trading at /team/stocks
+-- SUCCESS! Your database is now fixed and initialized!
+-- Refresh your admin page and everything should work.
 -- ============================================================
+```
+
+---
+
+## 🎯 After Running the Script
+
+1. **Refresh your admin page**
+2. **Check Stocks page** - should show 63 stocks
+3. **Check Teams page** - should work now
+4. **Check Events page** - should work now
+5. **Create a test team** at /team/signup
+6. **Test trading** at /team/stocks
+
+---
+
+## 📝 What This Script Does
+
+1. ✅ Adds missing columns to `app1_event` table
+2. ✅ Adds missing `sector` column to `app1_stock` table
+3. ✅ Removes the invalid `status` column
+4. ✅ Creates the event with all required fields
+5. ✅ Creates settings
+6. ✅ Creates all 63 stocks
+7. ✅ Verifies everything was created
+
+---
+
+This is **safe to run multiple times** - it checks if columns exist before adding them!
