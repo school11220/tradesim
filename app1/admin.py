@@ -145,14 +145,14 @@ class StockAdmin(admin.ModelAdmin):
             f'⚡ FORCE UPDATE COMPLETE! Updated {count} active stock(s) with ±2% volatility. '
             f'Teams will see new prices on their next refresh (auto-refreshes every 15 seconds).'
         )
-    update_all_prices.short_description = "⚡ FORCE UPDATE ALL PRICES (±2% volatility)"
+    update_all_prices.short_description = "FORCE UPDATE ALL PRICES (with 2% volatility)"
     
     def random_fluctuation(self, request, queryset):
         """Apply random price fluctuation to selected stocks only"""
         for stock in queryset:
             stock.update_price_random(volatility=0.02)
         self.message_user(request, f'Applied random price changes to {queryset.count()} selected stock(s).')
-    random_fluctuation.short_description = "📊 Apply random fluctuation (selected only)"
+    random_fluctuation.short_description = "Apply random fluctuation (selected only)"
     
     def increase_price_10(self, request, queryset):
         """Increase price by 10 percent"""
@@ -160,7 +160,7 @@ class StockAdmin(admin.ModelAdmin):
             stock.current_price *= 1.10
             stock.save()
         self.message_user(request, f'Increased price by 10% for {queryset.count()} stock(s).')
-    increase_price_10.short_description = "📈 Increase price by 10 percent"
+    increase_price_10.short_description = "Increase price by 10%"
     
     def decrease_price_10(self, request, queryset):
         """Decrease price by 10 percent"""
@@ -168,7 +168,7 @@ class StockAdmin(admin.ModelAdmin):
             stock.current_price *= 0.90
             stock.save()
         self.message_user(request, f'Decreased price by 10% for {queryset.count()} stock(s).')
-    decrease_price_10.short_description = "📉 Decrease price by 10 percent"
+    decrease_price_10.short_description = "Decrease price by 10%"
     
     def set_previous_to_current(self, request, queryset):
         """Set previous close to current price (reset change to 0)"""
@@ -277,25 +277,25 @@ class EventAdmin(admin.ModelAdmin):
         """Start selected events"""
         updated = queryset.update(is_active=True)
         self.message_user(request, f'{updated} event(s) started successfully!')
-    start_event.short_description = "▶️ START selected events"
+    start_event.short_description = "START selected events"
     
     def stop_event(self, request, queryset):
         """Stop selected events"""
         updated = queryset.update(is_active=False)
         self.message_user(request, f'{updated} event(s) stopped successfully!')
-    stop_event.short_description = "⏸️ STOP selected events"
+    stop_event.short_description = "STOP selected events"
     
     def open_registration(self, request, queryset):
         """Open registration for selected events"""
         updated = queryset.update(registration_open=True)
         self.message_user(request, f'Registration opened for {updated} event(s)!')
-    open_registration.short_description = "🔓 Open registration"
+    open_registration.short_description = "Open registration"
     
     def close_registration(self, request, queryset):
         """Close registration for selected events"""
         updated = queryset.update(registration_open=False)
         self.message_user(request, f'Registration closed for {updated} event(s)!')
-    close_registration.short_description = "🔒 Close registration"
+    close_registration.short_description = "Close registration"
 
 
 @admin.register(Team)
