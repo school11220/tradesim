@@ -118,7 +118,7 @@ class StockAdmin(admin.ModelAdmin):
             color = 'green' if change >= 0 else 'red'
             arrow = '↑' if change >= 0 else '↓'
             return format_html(
-                '<span style="color: {};">{} ${:,.2f} ({:+.2f}%%)</span>',
+                '<span style="color: {};">{} ${:,.2f} ({:+.2f}%)</span>',
                 color, arrow, abs(change), percent
             )
         except (ValueError, TypeError, AttributeError):
@@ -174,13 +174,13 @@ class StockAdmin(admin.ModelAdmin):
 @admin.register(SimulatorSettings)
 class SimulatorSettingsAdmin(admin.ModelAdmin):
     """Admin interface for global simulator settings"""
-    list_display = ('setting_key', 'setting_value', 'description', 'last_updated')
-    search_fields = ('setting_key', 'description')
-    ordering = ('setting_key',)
+    list_display = ('setting_name', 'setting_value', 'description', 'last_updated')
+    search_fields = ('setting_name', 'description')
+    ordering = ('setting_name',)
     
     fieldsets = (
         ('Setting', {
-            'fields': ('setting_key', 'setting_value', 'description')
+            'fields': ('setting_name', 'setting_value', 'description')
         }),
         ('Metadata', {
             'fields': ('last_updated',),

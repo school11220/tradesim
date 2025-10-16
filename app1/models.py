@@ -75,7 +75,7 @@ class Stock(models.Model):
 
 class SimulatorSettings(models.Model):
     """Global settings for the stock market simulator"""
-    setting_key = models.CharField(max_length=50, unique=True, primary_key=True)
+    setting_name = models.CharField(max_length=50, unique=True, primary_key=True, db_column='setting_name')
     setting_value = models.TextField()
     description = models.TextField(blank=True)
     last_updated = models.DateTimeField(auto_now=True)
@@ -83,15 +83,16 @@ class SimulatorSettings(models.Model):
     class Meta:
         verbose_name = "Simulator Setting"
         verbose_name_plural = "Simulator Settings"
+        db_table = 'app1_simulatorsettings'
 
     def __str__(self):
-        return f"{self.setting_key}: {self.setting_value}"
+        return f"{self.setting_name}: {self.setting_value}"
 
     @classmethod
     def get_default_balance(cls):
         """Get the default starting balance for new users"""
         try:
-            setting = cls.objects.get(setting_key='default_user_balance')
+            setting = cls.objects.get(setting_name='default_user_balance')
             return float(setting.setting_value)
         except (cls.DoesNotExist, ValueError):
             return 10000.0
@@ -100,7 +101,7 @@ class SimulatorSettings(models.Model):
     def set_default_balance(cls, amount):
         """Set the default starting balance for new users"""
         setting, created = cls.objects.update_or_create(
-            setting_key='default_user_balance',
+            setting_name='default_user_balance',
             defaults={
                 'setting_value': str(amount),
                 'description': 'Default starting balance for new user accounts'
