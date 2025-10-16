@@ -85,20 +85,11 @@ except admin.sites.NotRegistered:
 
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
-    """Admin interface for controlling stock prices - ULTRA MINIMAL"""
-    list_display = ('symbol', 'name', 'current_price')
-    search_fields = ('symbol',)
-    
-    # Absolutely nothing else - no actions, no filters, no methods
-    
-    def has_add_permission(self, request):
-        return True
-    
-    def has_change_permission(self, request, obj=None):
-        return True
-    
-    def has_delete_permission(self, request, obj=None):
-        return True
+    """Admin interface for controlling stock prices - Clean and Simple"""
+    list_display = ('symbol', 'name', 'current_price', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('symbol', 'name')
+    ordering = ('symbol',)
     
     fieldsets = (
         ('Stock Information', {
@@ -116,94 +107,7 @@ class StockAdmin(admin.ModelAdmin):
     
     readonly_fields = ('last_updated', 'created_at')
     
-    def current_price_display(self, obj):
-        """Display current price formatted"""
-        try:
-            return format_html('<strong>${:,.2f}</strong>', float(obj.current_price))
-        except (ValueError, TypeError):
-            return format_html('<strong>$0.00</strong>')
-    current_price_display.short_description = 'Current Price'
-    current_price_display.admin_order_field = 'current_price'
-    
-    def change_display(self, obj):
-        """Display price change with color coding"""
-        try:
-            change = obj.price_change
-            percent = obj.price_change_percent
-            color = 'green' if change >= 0 else 'red'
-            arrow = 'UP' if change >= 0 else 'DOWN'  # Use text instead of symbols
-            return format_html(
-                '<span style="color: {};">{} ${:,.2f} ({:+.2f}%)</span>',
-                color, arrow, abs(change), percent
-            )
-        except (ValueError, TypeError, AttributeError):
-            return format_html('<span>-</span>')
-    change_display.short_description = 'Change'
-    
-    # Simplified actions list for debugging
-    actions = ['update_all_prices', 'activate_stocks', 'deactivate_stocks']
-    
-    def update_all_prices(self, request, queryset):
-        """⚡ FORCE UPDATE: Apply random price changes to ALL active stocks"""
-        from django.contrib import messages
-        
-        # Update ALL active stocks, not just selected
-        all_active_stocks = Stock.objects.filter(is_active=True)
-        count = 0
-        
-        for stock in all_active_stocks:
-            stock.update_price_random(volatility=0.02)
-            count += 1
-        
-        messages.success(
-            request, 
-            f'⚡ FORCE UPDATE COMPLETE! Updated {count} active stock(s) with ±2% volatility. '
-            f'Teams will see new prices on their next refresh (auto-refreshes every 15 seconds).'
-        )
-    update_all_prices.short_description = "FORCE UPDATE ALL PRICES (with 2% volatility)"
-    
-    def random_fluctuation(self, request, queryset):
-        """Apply random price fluctuation to selected stocks only"""
-        for stock in queryset:
-            stock.update_price_random(volatility=0.02)
-        self.message_user(request, f'Applied random price changes to {queryset.count()} selected stock(s).')
-    random_fluctuation.short_description = "Apply random fluctuation (selected only)"
-    
-    def increase_price_10(self, request, queryset):
-        """Increase price by 10 percent"""
-        for stock in queryset:
-            stock.current_price *= 1.10
-            stock.save()
-        self.message_user(request, f'Increased price by 10% for {queryset.count()} stock(s).')
-    increase_price_10.short_description = "Increase price by 10%"
-    
-    def decrease_price_10(self, request, queryset):
-        """Decrease price by 10 percent"""
-        for stock in queryset:
-            stock.current_price *= 0.90
-            stock.save()
-        self.message_user(request, f'Decreased price by 10% for {queryset.count()} stock(s).')
-    decrease_price_10.short_description = "Decrease price by 10%"
-    
-    def set_previous_to_current(self, request, queryset):
-        """Set previous close to current price (reset change to 0)"""
-        for stock in queryset:
-            stock.previous_close = stock.current_price
-            stock.save()
-        self.message_user(request, f'Reset previous close for {queryset.count()} stock(s).')
-    set_previous_to_current.short_description = "Set previous close = current price"
-    
-    def activate_stocks(self, request, queryset):
-        """Activate selected stocks"""
-        count = queryset.update(is_active=True)
-        self.message_user(request, f'Activated {count} stock(s).')
-    activate_stocks.short_description = "Activate stocks"
-    
-    def deactivate_stocks(self, request, queryset):
-        """Deactivate selected stocks"""
-        count = queryset.update(is_active=False)
-        self.message_user(request, f'Deactivated {count} stock(s).')
-    deactivate_stocks.short_description = "Deactivate stocks"
+    # NO ACTIONS - Prices update automatically via GitHub Actions every 2 minutes
 
 
 @admin.register(SimulatorSettings)
