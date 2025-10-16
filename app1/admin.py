@@ -118,7 +118,7 @@ class StockAdmin(admin.ModelAdmin):
             change = obj.price_change
             percent = obj.price_change_percent
             color = 'green' if change >= 0 else 'red'
-            arrow = '↑' if change >= 0 else '↓'
+            arrow = '&uarr;' if change >= 0 else '&darr;'  # Use HTML entities for arrows
             return format_html(
                 '<span style="color: {};">{} ${:,.2f} ({:+.2f}%)</span>',
                 color, arrow, abs(change), percent
@@ -427,19 +427,19 @@ class TeamAdmin(admin.ModelAdmin):
             team.total_trades = 0
             team.save()
         self.message_user(request, f'{queryset.count()} team(s) reset to initial capital!')
-    reset_balance.short_description = "🔄 Reset to initial capital"
+    reset_balance.short_description = "Reset to initial capital"
     
     def disqualify_team(self, request, queryset):
         """Disqualify selected teams"""
         updated = queryset.update(is_disqualified=True, is_active=False)
         self.message_user(request, f'{updated} team(s) disqualified!')
-    disqualify_team.short_description = "❌ Disqualify teams"
+    disqualify_team.short_description = "Disqualify teams"
     
     def activate_team(self, request, queryset):
         """Activate selected teams"""
         updated = queryset.update(is_disqualified=False, is_active=True)
         self.message_user(request, f'{updated} team(s) activated!')
-    activate_team.short_description = "✓ Activate teams"
+    activate_team.short_description = "Activate teams"
 
 
 # Customize admin site headers
