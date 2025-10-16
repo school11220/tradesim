@@ -222,7 +222,19 @@
         <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search stocks by symbol or name...">
     </div>
     
-    {% if stocks %}
+    {% if stock_count > 0 %}
+        <div class="info-banner" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 25px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong>{{ stock_count }}</strong> stocks available for trading
+                {% if event %}
+                | Event: <strong>{{ event.name }}</strong>
+                {% endif %}
+            </div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">
+                💡 Prices update in real-time when admin makes changes
+            </div>
+        </div>
+        
         <div class="stocks-grid" id="stocksGrid">
             {% for stock in stocks %}
             <div class="stock-card {% if stock.owns %}owned{% endif %}" data-symbol="{{ stock.symbol }}" data-name="{{ stock.name }}">
@@ -230,6 +242,9 @@
                     <div>
                         <div class="stock-symbol">{{ stock.symbol }}</div>
                         <div class="stock-name">{{ stock.name }}</div>
+                        {% if stock.sector != 'N/A' %}
+                        <div style="font-size: 0.75rem; color: #999; margin-top: 3px;">{{ stock.sector }}</div>
+                        {% endif %}
                     </div>
                     {% if stock.owns %}
                     <span class="ownership-badge">✓ Owned</span>
@@ -264,9 +279,23 @@
         </div>
     {% else %}
         <div class="no-stocks">
-            <i class="fas fa-chart-line"></i>
-            <h2>No Stocks Available</h2>
-            <p>There are currently no active stocks to trade.</p>
+            <i class="fas fa-exclamation-triangle" style="font-size: 5rem; color: #ff9800; margin-bottom: 20px;"></i>
+            <h2 style="color: #333; margin-bottom: 15px;">No Stocks Available Yet</h2>
+            <p style="color: #666; font-size: 1.1rem; margin-bottom: 25px;">The admin hasn't added any stocks to trade yet.</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; max-width: 600px; margin: 0 auto; text-align: left;">
+                <h3 style="color: #333; margin-bottom: 15px;">📝 What's Next?</h3>
+                <ul style="color: #666; line-height: 1.8;">
+                    <li>The admin needs to initialize the database with stocks</li>
+                    <li>Once stocks are added, they'll appear here automatically</li>
+                    <li>You'll be able to browse, buy, and sell stocks</li>
+                    <li>All prices are controlled by the admin in real-time</li>
+                </ul>
+            </div>
+            
+            <a href="{% url 'team_dashboard' %}" style="display: inline-block; margin-top: 30px; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 10px; font-weight: 600;">
+                ← Back to Dashboard
+            </a>
         </div>
     {% endif %}
 </div>

@@ -605,6 +605,8 @@ def team_stocks(request):
         
         # Check if event is active
         if not team.event.is_active:
+            from django.contrib import messages
+            messages.warning(request, "Trading is currently paused. Event is not active.")
             return redirect('team_dashboard')
         
         # Get all active stocks
@@ -615,12 +617,14 @@ def team_stocks(request):
         stock_data = []
         for stock in stocks:
             # Check if team owns this stock
-            holding = team.portfolio.get(stock.symbol, {})
+            portfolio = team.portfolio if isinstance(team.portfolio, dict) else {}
+            holding = portfolio.get(stock.symbol, {})
             owns = holding.get('quantity', 0) > 0
             
             stock_info = {
                 'symbol': stock.symbol,
                 'name': stock.name,
+                'sector': stock.sector if hasattr(stock, 'sector') else 'N/A',
                 'current_price': float(stock.current_price),
                 'previous_close': float(stock.previous_close),
                 'price_change': float(stock.price_change),
@@ -637,6 +641,8 @@ def team_stocks(request):
             'team_name': team.team_name,
             'balance': float(team.balance),
             'stocks': stock_data,
+            'stock_count': len(stock_data),
+            'event': team.event,
             'title': 'Browse Stocks'
         }
         
@@ -645,6 +651,10 @@ def team_stocks(request):
     except Team.DoesNotExist:
         request.session.flush()
         return redirect('team_login')
+    except Exception as e:
+        from django.contrib import messages
+        messages.error(request, f"Error loading stocks: {str(e)}")
+        return redirect('team_dashboard')
 
 
 def team_trade(request, symbol):
@@ -812,7 +822,10 @@ def team_portfolio(request):
         total_invested = 0
         total_current_value = 0
         
-        for symbol, holding in team.portfolio.items():
+        # Ensure portfolio is a dict
+        portfolio = team.portfolio if isinstance(team.portfolio, dict) else {}
+        
+        for symbol, holding in portfolio.items():
             try:
                 stock = Stock.objects.get(symbol=symbol, is_active=True)
                 quantity = holding.get('quantity', 0)
@@ -826,6 +839,7 @@ def team_portfolio(request):
                 portfolio_data.append({
                     'symbol': symbol,
                     'name': stock.name,
+                    'sector': stock.sector if hasattr(stock, 'sector') else 'N/A',
                     'quantity': quantity,
                     'avg_price': avg_price,
                     'current_price': float(stock.current_price),
@@ -851,11 +865,13 @@ def team_portfolio(request):
             'team_name': team.team_name,
             'balance': float(team.balance),
             'portfolio': portfolio_data,
+            'holdings_count': len(portfolio_data),
             'total_invested': total_invested,
             'total_current_value': total_current_value,
             'total_profit_loss': total_profit_loss,
             'total_profit_loss_percent': total_profit_loss_percent,
             'portfolio_value': team.portfolio_value,
+            'event': team.event,
             'title': 'Portfolio'
         }
         
@@ -864,3 +880,7 @@ def team_portfolio(request):
     except Team.DoesNotExist:
         request.session.flush()
         return redirect('team_login')
+    except Exception as e:
+        from django.contrib import messages
+        messages.error(request, f"Error loading portfolio: {str(e)}")
+        return redirect('team_dashboard')

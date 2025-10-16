@@ -263,7 +263,14 @@
             <a href="{% url 'team_stocks' %}" class="browse-button">Browse All Stocks</a>
         </div>
         
-        {% if portfolio %}
+        {% if holdings_count > 0 %}
+            <div class="info-banner" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 25px; border-radius: 10px; margin-bottom: 20px;">
+                <strong>{{ holdings_count }}</strong> stock{{ holdings_count|pluralize }} in your portfolio
+                {% if event %}
+                | Event: <strong>{{ event.name }}</strong>
+                {% endif %}
+            </div>
+            
             <div class="summary-grid">
                 <div class="summary-card">
                     <div class="summary-label">Total Invested</div>
@@ -275,7 +282,7 @@
                 </div>
                 <div class="summary-card">
                     <div class="summary-label">Number of Stocks</div>
-                    <div class="summary-value">{{ portfolio|length }}</div>
+                    <div class="summary-value">{{ holdings_count }}</div>
                 </div>
                 <div class="summary-card" style="border-left-color: {% if total_profit_loss >= 0 %}#4caf50{% else %}#f44336{% endif %}">
                     <div class="summary-label">Net Gain/Loss</div>
@@ -324,10 +331,30 @@
             </table>
         {% else %}
             <div class="empty-state">
-                <i class="fas fa-chart-pie"></i>
-                <h2>No Holdings Yet</h2>
-                <p>Start trading to build your portfolio!</p>
-                <a href="{% url 'team_stocks' %}" class="browse-button" style="margin-top: 20px; display: inline-block;">Browse Stocks</a>
+                <i class="fas fa-wallet" style="font-size: 5rem; color: #667eea; margin-bottom: 20px;"></i>
+                <h2 style="color: #333; margin-bottom: 15px;">Your Portfolio is Empty</h2>
+                <p style="color: #666; font-size: 1.1rem; margin-bottom: 25px;">You haven't purchased any stocks yet. Start building your portfolio now!</p>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; max-width: 600px; margin: 20px auto; text-align: left;">
+                    <h3 style="color: #333; margin-bottom: 15px;">💡 Quick Start Guide:</h3>
+                    <ul style="color: #666; line-height: 1.8;">
+                        <li><strong>Browse Stocks:</strong> View all available stocks and their current prices</li>
+                        <li><strong>Analyze:</strong> Check price changes and trends before buying</li>
+                        <li><strong>Buy Shares:</strong> Purchase stocks with your available balance</li>
+                        <li><strong>Monitor:</strong> Track your profit/loss in real-time</li>
+                        <li><strong>Trade Smart:</strong> Sell high, buy low to maximize returns</li>
+                    </ul>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <a href="{% url 'team_stocks' %}" class="browse-button" style="display: inline-block;">
+                        <i class="fas fa-chart-line"></i> Browse Stocks to Get Started
+                    </a>
+                </div>
+                
+                <div style="margin-top: 20px; color: #999; font-size: 0.95rem;">
+                    Available Balance: <strong style="color: #4CAF50;">${{ balance|floatformat:2 }}</strong>
+                </div>
             </div>
         {% endif %}
     </div>
