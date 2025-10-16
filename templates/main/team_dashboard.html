@@ -136,11 +136,7 @@
                                 {% endif %}
                             </td>
                             <td class="py-3 px-4 text-right font-semibold text-blue-400">
-                                {% if data.current_value %}
-                                    ${{ data.current_value|floatformat:2 }}
-                                {% else %}
-                                    ${{ data.quantity|multiply:data.avg_price|floatformat:2 }}
-                                {% endif %}
+                                ${{ data.current_value|default:0|floatformat:2 }}
                             </td>
                             <td class="py-3 px-4 text-right font-semibold">
                                 {% if data.unrealized_pl is not None %}
