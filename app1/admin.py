@@ -81,7 +81,7 @@ class StockAdmin(admin.ModelAdmin):
     """Admin interface for controlling stock prices"""
     # Temporarily disable custom template to diagnose issue
     # change_list_template = 'admin/stock_changelist.html'
-    list_display = ('symbol', 'name', 'current_price_display', 'previous_close', 'change_display', 'is_active', 'last_updated')
+    list_display = ('symbol', 'name', 'current_price_display', 'previous_close', 'is_active', 'last_updated')
     list_filter = ('is_active', 'last_updated')
     search_fields = ('symbol', 'name')
     ordering = ('symbol',)
@@ -127,7 +127,8 @@ class StockAdmin(admin.ModelAdmin):
             return format_html('<span>-</span>')
     change_display.short_description = 'Change'
     
-    actions = ['update_all_prices', 'random_fluctuation', 'increase_price_10', 'decrease_price_10', 'set_previous_to_current', 'activate_stocks', 'deactivate_stocks']
+    # Simplified actions list for debugging
+    actions = ['update_all_prices', 'activate_stocks', 'deactivate_stocks']
     
     def update_all_prices(self, request, queryset):
         """⚡ FORCE UPDATE: Apply random price changes to ALL active stocks"""
