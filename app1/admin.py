@@ -256,15 +256,15 @@ class EventAdmin(admin.ModelAdmin):
     def is_active_display(self, obj):
         """Display active status"""
         if obj.is_active:
-            return format_html('<span style="color: green;">✓ Active</span>')
-        return format_html('<span style="color: gray;">○ Inactive</span>')
+            return format_html('<span style="color: green;">&#x2713; Active</span>')
+        return format_html('<span style="color: gray;">&#x25CB; Inactive</span>')
     is_active_display.short_description = 'Active'
     
     def registration_status(self, obj):
         """Display registration status"""
         if obj.registration_open:
-            return format_html('<span style="color: green;">✓ Open</span>')
-        return format_html('<span style="color: red;">✗ Closed</span>')
+            return format_html('<span style="color: green;">&#x2713; Open</span>')
+        return format_html('<span style="color: red;">&#x2717; Closed</span>')
     registration_status.short_description = 'Registration'
     
     def team_count(self, obj):
@@ -388,10 +388,10 @@ class TeamAdmin(admin.ModelAdmin):
     def is_active_display(self, obj):
         """Display active status"""
         if obj.is_disqualified:
-            return format_html('<span style="color: red;">❌ Disqualified</span>')
+            return format_html('<span style="color: red;">&#x274C; Disqualified</span>')
         if obj.is_active:
-            return format_html('<span style="color: green;">✓ Active</span>')
-        return format_html('<span style="color: gray;">○ Inactive</span>')
+            return format_html('<span style="color: green;">&#x2713; Active</span>')
+        return format_html('<span style="color: gray;">&#x25CB; Inactive</span>')
     is_active_display.short_description = 'Status'
     
     def trade_history_display(self, obj):
