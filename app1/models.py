@@ -168,7 +168,6 @@ class Team(models.Model):
     @property
     def portfolio_value(self):
         """Calculate total portfolio value (cash + holdings)"""
-        from app1.models import Stock
         holdings_value = 0
         for symbol, data in self.portfolio.items():
             try:
