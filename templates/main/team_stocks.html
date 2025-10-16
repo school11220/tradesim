@@ -377,9 +377,13 @@
             <span id="lastUpdateTime" style="font-size: 0.9rem; color: var(--text-light);">
                 Last updated: Never
             </span>
+            <button class="refresh-btn" id="forceUpdateBtn" onclick="forceUpdatePrices()" style="background: var(--warning);">
+                <span id="forceUpdateIcon">⚡</span>
+                <span id="forceUpdateText">Force Update</span>
+            </button>
             <button class="refresh-btn" id="refreshBtn" onclick="refreshPrices()">
                 <span id="refreshIcon">🔄</span>
-                <span id="refreshText">Refresh Prices</span>
+                <span id="refreshText">Refresh View</span>
             </button>
         </div>
         
@@ -546,7 +550,53 @@
             isRefreshing = false;
             btn.classList.remove('loading');
             icon.textContent = '🔄';
-            text.textContent = 'Refresh Prices';
+            text.textContent = 'Refresh View';
+        }
+    }
+    
+    // Force update prices on backend
+    let isForceUpdating = false;
+    
+    async function forceUpdatePrices() {
+        if (isForceUpdating) return;
+        
+        isForceUpdating = true;
+        const btn = document.getElementById('forceUpdateBtn');
+        const icon = document.getElementById('forceUpdateIcon');
+        const text = document.getElementById('forceUpdateText');
+        
+        btn.classList.add('loading');
+        icon.textContent = '⏳';
+        text.textContent = 'Updating...';
+        btn.disabled = true;
+        
+        try {
+            showNotification('⚡ Triggering backend price update...', 'info');
+            
+            // Call the backend API to update all stock prices
+            const response = await fetch('/api/update-prices');
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification(`✅ Backend updated ${data.updated_count} stocks!`, 'success');
+                console.log('Backend update result:', data);
+                
+                // Wait 2 seconds then refresh the view
+                setTimeout(() => {
+                    refreshPrices();
+                }, 2000);
+            } else {
+                showNotification('❌ Failed to update backend prices', 'error');
+            }
+        } catch (error) {
+            console.error('Error forcing price update:', error);
+            showNotification('❌ Failed to trigger backend update', 'error');
+        } finally {
+            isForceUpdating = false;
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            icon.textContent = '⚡';
+            text.textContent = 'Force Update';
         }
     }
     
@@ -558,7 +608,7 @@
             top: 20px;
             right: 20px;
             padding: 16px 24px;
-            background: ${type === 'success' ? '#10b981' : '#ef4444'};
+            background: ${type === 'success' ? '#10b981' : type === 'info' ? '#3b82f6' : '#ef4444'};
             color: white;
             border-radius: 8px;
             font-weight: 600;

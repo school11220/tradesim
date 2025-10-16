@@ -2,9 +2,10 @@ name: Update Stock Prices
 
 on:
   schedule:
-    # Run every 5 minutes during trading hours (9 AM - 4 PM UTC)
-    - cron: '*/5 9-16 * * 1-5'
-  workflow_dispatch: # Allow manual trigger
+    # Run every 2 minutes during extended hours (6 AM - 11 PM UTC to cover all timezones)
+    # This covers: US (9:30 AM - 4 PM ET), EU, and Asian markets
+    - cron: '*/2 6-23 * * 1-5'
+  workflow_dispatch: # Allow manual trigger from GitHub Actions tab
 
 jobs:
   update-prices:
