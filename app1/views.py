@@ -590,3 +590,277 @@ def generate_team_code():
     chars = string.ascii_uppercase + string.digits
     code = ''.join(secrets.choice(chars) for _ in range(4))
     return f"TEAM-{code}"
+
+
+# ============ TEAM TRADING FUNCTIONS ============
+
+def team_stocks(request):
+    """Browse all available stocks for trading"""
+    if not request.session.get('is_team'):
+        return redirect('team_login')
+    
+    try:
+        team_id = request.session.get('team_id')
+        team = Team.objects.get(id=team_id)
+        
+        # Check if event is active
+        if not team.event.is_active:
+            return redirect('team_dashboard')
+        
+        # Get all active stocks
+        from app1.models import Stock
+        stocks = Stock.objects.filter(is_active=True).order_by('symbol')
+        
+        # Calculate additional info for each stock
+        stock_data = []
+        for stock in stocks:
+            # Check if team owns this stock
+            holding = team.portfolio.get(stock.symbol, {})
+            owns = holding.get('quantity', 0) > 0
+            
+            stock_info = {
+                'symbol': stock.symbol,
+                'name': stock.name,
+                'current_price': float(stock.current_price),
+                'previous_close': float(stock.previous_close),
+                'price_change': float(stock.price_change),
+                'price_change_percent': float(stock.price_change_percent),
+                'owns': owns,
+                'quantity': holding.get('quantity', 0) if owns else 0,
+                'avg_price': holding.get('avg_price', 0) if owns else 0,
+            }
+            stock_data.append(stock_info)
+        
+        data = {
+            'team': team,
+            'team_code': team.team_code,
+            'team_name': team.team_name,
+            'balance': float(team.balance),
+            'stocks': stock_data,
+            'title': 'Browse Stocks'
+        }
+        
+        return render(request, "main/team_stocks.html", data)
+        
+    except Team.DoesNotExist:
+        request.session.flush()
+        return redirect('team_login')
+
+
+def team_trade(request, symbol):
+    """Buy or sell a specific stock"""
+    if not request.session.get('is_team'):
+        return redirect('team_login')
+    
+    try:
+        team_id = request.session.get('team_id')
+        team = Team.objects.get(id=team_id)
+        
+        # Check if event is active
+        if not team.event.is_active:
+            return redirect('team_dashboard')
+        
+        # Get the stock
+        from app1.models import Stock
+        stock = Stock.objects.get(symbol=symbol, is_active=True)
+        
+        # Get team's current holding
+        holding = team.portfolio.get(symbol, {'quantity': 0, 'avg_price': 0})
+        
+        error = None
+        success = None
+        
+        if request.method == "POST":
+            action = request.POST.get("action")  # 'buy' or 'sell'
+            quantity = int(request.POST.get("quantity", 0))
+            
+            if quantity <= 0:
+                error = "Quantity must be greater than 0"
+            elif action == "buy":
+                # Calculate cost
+                total_cost = float(stock.current_price) * quantity
+                
+                # Check if team has enough balance
+                if total_cost > float(team.balance):
+                    error = f"Insufficient balance. Need ${total_cost:,.2f}, have ${float(team.balance):,.2f}"
+                else:
+                    # Execute buy
+                    current_quantity = holding.get('quantity', 0)
+                    current_avg = holding.get('avg_price', 0)
+                    
+                    # Calculate new average price
+                    total_shares = current_quantity + quantity
+                    new_avg_price = ((current_quantity * current_avg) + (quantity * float(stock.current_price))) / total_shares
+                    
+                    # Update portfolio
+                    team.portfolio[symbol] = {
+                        'quantity': total_shares,
+                        'avg_price': new_avg_price
+                    }
+                    
+                    # Deduct balance
+                    team.balance = float(team.balance) - total_cost
+                    
+                    # Record trade
+                    from django.utils import timezone
+                    trade_record = {
+                        'time': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'type': 'BUY',
+                        'symbol': symbol,
+                        'quantity': quantity,
+                        'price': float(stock.current_price),
+                        'total': total_cost
+                    }
+                    team.trade_history.append(trade_record)
+                    team.total_trades += 1
+                    team.last_trade_time = timezone.now()
+                    
+                    team.save()
+                    
+                    success = f"Successfully bought {quantity} shares of {symbol} for ${total_cost:,.2f}"
+                    
+            elif action == "sell":
+                # Check if team owns enough shares
+                if holding.get('quantity', 0) < quantity:
+                    error = f"Insufficient shares. You own {holding.get('quantity', 0)} shares"
+                else:
+                    # Execute sell
+                    total_revenue = float(stock.current_price) * quantity
+                    remaining_shares = holding['quantity'] - quantity
+                    
+                    if remaining_shares == 0:
+                        # Sold all shares, remove from portfolio
+                        team.portfolio.pop(symbol, None)
+                    else:
+                        # Update quantity
+                        team.portfolio[symbol]['quantity'] = remaining_shares
+                    
+                    # Add balance
+                    team.balance = float(team.balance) + total_revenue
+                    
+                    # Record trade
+                    from django.utils import timezone
+                    trade_record = {
+                        'time': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'type': 'SELL',
+                        'symbol': symbol,
+                        'quantity': quantity,
+                        'price': float(stock.current_price),
+                        'total': total_revenue
+                    }
+                    team.trade_history.append(trade_record)
+                    team.total_trades += 1
+                    team.last_trade_time = timezone.now()
+                    
+                    team.save()
+                    
+                    success = f"Successfully sold {quantity} shares of {symbol} for ${total_revenue:,.2f}"
+            
+            # Refresh holding data after trade
+            holding = team.portfolio.get(symbol, {'quantity': 0, 'avg_price': 0})
+        
+        # Calculate profit/loss if team owns the stock
+        current_value = 0
+        invested_value = 0
+        profit_loss = 0
+        profit_loss_percent = 0
+        
+        if holding.get('quantity', 0) > 0:
+            current_value = float(stock.current_price) * holding['quantity']
+            invested_value = holding['avg_price'] * holding['quantity']
+            profit_loss = current_value - invested_value
+            if invested_value > 0:
+                profit_loss_percent = (profit_loss / invested_value) * 100
+        
+        data = {
+            'team': team,
+            'team_code': team.team_code,
+            'team_name': team.team_name,
+            'balance': float(team.balance),
+            'stock': stock,
+            'holding': holding,
+            'current_value': current_value,
+            'invested_value': invested_value,
+            'profit_loss': profit_loss,
+            'profit_loss_percent': profit_loss_percent,
+            'error': error,
+            'success': success,
+            'title': f'Trade {symbol}'
+        }
+        
+        return render(request, "main/team_trade.html", data)
+        
+    except Stock.DoesNotExist:
+        return redirect('team_stocks')
+    except Team.DoesNotExist:
+        request.session.flush()
+        return redirect('team_login')
+
+
+def team_portfolio(request):
+    """View team's complete portfolio with profit/loss"""
+    if not request.session.get('is_team'):
+        return redirect('team_login')
+    
+    try:
+        team_id = request.session.get('team_id')
+        team = Team.objects.get(id=team_id)
+        
+        # Get current prices for all holdings
+        from app1.models import Stock
+        portfolio_data = []
+        total_invested = 0
+        total_current_value = 0
+        
+        for symbol, holding in team.portfolio.items():
+            try:
+                stock = Stock.objects.get(symbol=symbol, is_active=True)
+                quantity = holding.get('quantity', 0)
+                avg_price = holding.get('avg_price', 0)
+                
+                invested = avg_price * quantity
+                current_value = float(stock.current_price) * quantity
+                profit_loss = current_value - invested
+                profit_loss_percent = (profit_loss / invested * 100) if invested > 0 else 0
+                
+                portfolio_data.append({
+                    'symbol': symbol,
+                    'name': stock.name,
+                    'quantity': quantity,
+                    'avg_price': avg_price,
+                    'current_price': float(stock.current_price),
+                    'invested': invested,
+                    'current_value': current_value,
+                    'profit_loss': profit_loss,
+                    'profit_loss_percent': profit_loss_percent
+                })
+                
+                total_invested += invested
+                total_current_value += current_value
+                
+            except Stock.DoesNotExist:
+                # Stock might have been deactivated
+                continue
+        
+        total_profit_loss = total_current_value - total_invested
+        total_profit_loss_percent = (total_profit_loss / total_invested * 100) if total_invested > 0 else 0
+        
+        data = {
+            'team': team,
+            'team_code': team.team_code,
+            'team_name': team.team_name,
+            'balance': float(team.balance),
+            'portfolio': portfolio_data,
+            'total_invested': total_invested,
+            'total_current_value': total_current_value,
+            'total_profit_loss': total_profit_loss,
+            'total_profit_loss_percent': total_profit_loss_percent,
+            'portfolio_value': team.portfolio_value,
+            'title': 'Portfolio'
+        }
+        
+        return render(request, "main/team_portfolio.html", data)
+        
+    except Team.DoesNotExist:
+        request.session.flush()
+        return redirect('team_login')

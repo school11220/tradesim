@@ -1,0 +1,335 @@
+{% extends "main/dashboardbase.html" %}
+
+{% block content %}
+<style>
+    .portfolio-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .header-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .portfolio-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .stat-card {
+        background: rgba(255,255,255,0.2);
+        padding: 20px;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+    
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+    
+    .stat-subtitle {
+        font-size: 0.85rem;
+        opacity: 0.8;
+        margin-top: 5px;
+    }
+    
+    .profit-loss-card {
+        background: rgba(255,255,255,0.2);
+        padding: 20px;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+        text-align: center;
+    }
+    
+    .profit-loss-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+    
+    .profit-loss-value.positive {
+        color: #4caf50;
+    }
+    
+    .profit-loss-value.negative {
+        color: #f44336;
+    }
+    
+    .content-section {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .section-title {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .browse-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 25px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .browse-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .holdings-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .holdings-table thead {
+        background: #f8f9fa;
+    }
+    
+    .holdings-table th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .holdings-table td {
+        padding: 18px 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .holdings-table tbody tr {
+        transition: background 0.3s;
+    }
+    
+    .holdings-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .symbol-cell {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #333;
+    }
+    
+    .name-cell {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .price-positive {
+        color: #2e7d32;
+        font-weight: 600;
+    }
+    
+    .price-negative {
+        color: #c62828;
+        font-weight: 600;
+    }
+    
+    .action-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+    
+    .action-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+    
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .summary-card {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .summary-label {
+        color: #666;
+        font-size: 0.95rem;
+        margin-bottom: 8px;
+    }
+    
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    @media (max-width: 768px) {
+        .holdings-table {
+            font-size: 0.85rem;
+        }
+        
+        .holdings-table th,
+        .holdings-table td {
+            padding: 10px 8px;
+        }
+    }
+</style>
+
+<div class="portfolio-container">
+    <div class="header-section">
+        <h1 style="margin: 0; font-size: 2rem;">💼 Portfolio Overview</h1>
+        <p style="margin-top: 10px; opacity: 0.9;">{{ team_name }} ({{ team_code }})</p>
+        
+        <div class="portfolio-stats">
+            <div class="stat-card">
+                <div class="stat-label">Total Portfolio Value</div>
+                <div class="stat-value">${{ portfolio_value|floatformat:2 }}</div>
+                <div class="stat-subtitle">Cash + Holdings</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">Available Cash</div>
+                <div class="stat-value">${{ balance|floatformat:2 }}</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">Holdings Value</div>
+                <div class="stat-value">${{ total_current_value|floatformat:2 }}</div>
+            </div>
+            
+            <div class="profit-loss-card">
+                <div class="stat-label">Total Profit/Loss</div>
+                <div class="profit-loss-value {% if total_profit_loss >= 0 %}positive{% else %}negative{% endif %}">
+                    {% if total_profit_loss >= 0 %}+{% endif %}${{ total_profit_loss|floatformat:2 }}
+                    <div class="stat-subtitle">({{ total_profit_loss_percent|floatformat:2 }}%)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="content-section">
+        <div class="section-header">
+            <h2 class="section-title">📊 Current Holdings</h2>
+            <a href="{% url 'team_stocks' %}" class="browse-button">Browse All Stocks</a>
+        </div>
+        
+        {% if portfolio %}
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="summary-label">Total Invested</div>
+                    <div class="summary-value">${{ total_invested|floatformat:2 }}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Current Value</div>
+                    <div class="summary-value">${{ total_current_value|floatformat:2 }}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Number of Stocks</div>
+                    <div class="summary-value">{{ portfolio|length }}</div>
+                </div>
+                <div class="summary-card" style="border-left-color: {% if total_profit_loss >= 0 %}#4caf50{% else %}#f44336{% endif %}">
+                    <div class="summary-label">Net Gain/Loss</div>
+                    <div class="summary-value" style="color: {% if total_profit_loss >= 0 %}#2e7d32{% else %}#c62828{% endif %}">
+                        {% if total_profit_loss >= 0 %}+{% endif %}${{ total_profit_loss|floatformat:2 }}
+                    </div>
+                </div>
+            </div>
+            
+            <table class="holdings-table" style="margin-top: 30px;">
+                <thead>
+                    <tr>
+                        <th>Stock</th>
+                        <th style="text-align: right;">Quantity</th>
+                        <th style="text-align: right;">Avg Price</th>
+                        <th style="text-align: right;">Current Price</th>
+                        <th style="text-align: right;">Invested</th>
+                        <th style="text-align: right;">Current Value</th>
+                        <th style="text-align: right;">P/L</th>
+                        <th style="text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for holding in portfolio %}
+                    <tr>
+                        <td>
+                            <div class="symbol-cell">{{ holding.symbol }}</div>
+                            <div class="name-cell">{{ holding.name }}</div>
+                        </td>
+                        <td style="text-align: right;">{{ holding.quantity }}</td>
+                        <td style="text-align: right;">${{ holding.avg_price|floatformat:2 }}</td>
+                        <td style="text-align: right;">${{ holding.current_price|floatformat:2 }}</td>
+                        <td style="text-align: right;">${{ holding.invested|floatformat:2 }}</td>
+                        <td style="text-align: right; font-weight: bold;">${{ holding.current_value|floatformat:2 }}</td>
+                        <td style="text-align: right;" class="{% if holding.profit_loss >= 0 %}price-positive{% else %}price-negative{% endif %}">
+                            {% if holding.profit_loss >= 0 %}+{% endif %}${{ holding.profit_loss|floatformat:2 }}
+                            <br>
+                            <small>({{ holding.profit_loss_percent|floatformat:2 }}%)</small>
+                        </td>
+                        <td style="text-align: center;">
+                            <a href="{% url 'team_trade' holding.symbol %}" class="action-button">Trade</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-chart-pie"></i>
+                <h2>No Holdings Yet</h2>
+                <p>Start trading to build your portfolio!</p>
+                <a href="{% url 'team_stocks' %}" class="browse-button" style="margin-top: 20px; display: inline-block;">Browse Stocks</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

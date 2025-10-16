@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     home, signup, user_login, createuser, logout, dashboard, stockdetails, 
     removewatchlist, updatestocks, user_portfolio, errorpage, settings, health_check,
-    team_signup, team_login, team_dashboard, team_logout
+    team_signup, team_login, team_dashboard, team_logout,
+    team_stocks, team_trade, team_portfolio
 )
 
 from .apis import search,watchlist,fetchdetails,graphdata,portfolio,portfoliochart,income,holdings,addtoWatchlist
@@ -17,11 +18,16 @@ urlpatterns = [
     path('createuser',createuser,name="createuser"),
     path('logout',logout,name="logout"),
     
-    # Team auth
-    path('team/signup', team_signup, name="team_signup"),
-    path('team/login', team_login, name="team_login"),
-    path('team/dashboard', team_dashboard, name="team_dashboard"),
-    path('team/logout', team_logout, name="team_logout"),
+    # Team Auth
+    path("team/signup", team_signup, name="team_signup"),
+    path("team/login", team_login, name="team_login"),
+    path("team/dashboard", team_dashboard, name="team_dashboard"),
+    path("team/logout", team_logout, name="team_logout"),
+    
+    # Team Trading
+    path("team/stocks", team_stocks, name="team_stocks"),
+    path("team/trade/<str:symbol>", team_trade, name="team_trade"),
+    path("team/portfolio", team_portfolio, name="team_portfolio"),
     
     # User dashboard
     path('dashboard',dashboard,name="dashboard"),

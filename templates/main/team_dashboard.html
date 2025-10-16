@@ -10,10 +10,20 @@
                 <h1 class="text-4xl font-bold gradient-text mb-2">{{ team_name }}</h1>
                 <p class="text-slate-400">Team Code: <span class="text-purple-400 font-mono">{{ team_code }}</span></p>
             </div>
-            <a href="{% url 'team_logout' %}" 
-               class="px-6 py-2 bg-red-500/20 border border-red-500 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">
-                Logout
-            </a>
+            <div class="flex gap-3">
+                <a href="{% url 'team_stocks' %}" 
+                   class="px-6 py-2 bg-purple-500/20 border border-purple-500 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors">
+                    📈 Browse Stocks
+                </a>
+                <a href="{% url 'team_portfolio' %}" 
+                   class="px-6 py-2 bg-blue-500/20 border border-blue-500 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors">
+                    💼 Portfolio
+                </a>
+                <a href="{% url 'team_logout' %}" 
+                   class="px-6 py-2 bg-red-500/20 border border-red-500 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">
+                    Logout
+                </a>
+            </div>
         </div>
 
         {% if error %}
