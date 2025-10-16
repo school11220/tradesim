@@ -1,0 +1,104 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+<div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <h2 style="color: white; margin: 0 0 15px 0; font-size: 24px;">⚡ Stock Price Control Center</h2>
+    
+    <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+        <button onclick="forceUpdateAllPrices()" id="forceUpdateBtn" 
+                style="background: #f59e0b; color: white; border: none; padding: 15px 30px; 
+                       font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; 
+                       box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: all 0.3s;">
+            <span id="updateIcon">⚡</span> FORCE UPDATE ALL PRICES
+        </button>
+        
+        <div id="updateStatus" style="color: white; font-weight: 500; display: none;">
+            <span id="statusIcon">⏳</span>
+            <span id="statusText">Updating...</span>
+        </div>
+        
+        <div style="color: white; opacity: 0.9; font-size: 14px; margin-left: auto;">
+            💡 This updates ALL active stocks with ±2% random changes
+        </div>
+    </div>
+</div>
+
+<script>
+let isUpdating = false;
+
+async function forceUpdateAllPrices() {
+    if (isUpdating) return;
+    
+    isUpdating = true;
+    const btn = document.getElementById('forceUpdateBtn');
+    const status = document.getElementById('updateStatus');
+    const icon = document.getElementById('updateIcon');
+    const statusIcon = document.getElementById('statusIcon');
+    const statusText = document.getElementById('statusText');
+    
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    icon.textContent = '⏳';
+    status.style.display = 'block';
+    statusIcon.textContent = '⏳';
+    statusText.textContent = 'Updating all stock prices...';
+    
+    try {
+        const response = await fetch('/api/update-prices');
+        const data = await response.json();
+        
+        if (data.success) {
+            statusIcon.textContent = '✅';
+            statusText.textContent = `Success! Updated ${data.updated_count} stocks.`;
+            status.style.color = '#10b981';
+            
+            // Show success message
+            const messages = document.querySelector('.messagelist');
+            if (messages) {
+                const newMsg = document.createElement('li');
+                newMsg.className = 'success';
+                newMsg.textContent = `⚡ Successfully updated ${data.updated_count} stock prices! Teams will see changes on next refresh.`;
+                messages.appendChild(newMsg);
+            }
+            
+            // Reload page after 2 seconds to show updated prices
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            throw new Error('Update failed');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        statusIcon.textContent = '❌';
+        statusText.textContent = 'Failed to update prices';
+        status.style.color = '#ef4444';
+        
+        setTimeout(() => {
+            status.style.display = 'none';
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            icon.textContent = '⚡';
+            isUpdating = false;
+        }, 3000);
+    }
+}
+
+// Hover effect
+document.getElementById('forceUpdateBtn').addEventListener('mouseenter', function() {
+    if (!this.disabled) {
+        this.style.background = '#d97706';
+        this.style.transform = 'translateY(-2px)';
+    }
+});
+
+document.getElementById('forceUpdateBtn').addEventListener('mouseleave', function() {
+    if (!this.disabled) {
+        this.style.background = '#f59e0b';
+        this.style.transform = 'translateY(0)';
+    }
+});
+</script>
+
+{{ block.super }}
+{% endblock %}

@@ -79,6 +79,7 @@ class CustomUserAdmin(UserAdmin):
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
     """Admin interface for controlling stock prices"""
+    change_list_template = 'admin/stock_changelist.html'
     list_display = ('symbol', 'name', 'current_price_display', 'previous_close', 'change_display', 'is_active', 'last_updated')
     list_filter = ('is_active', 'last_updated')
     search_fields = ('symbol', 'name')
@@ -125,7 +126,33 @@ class StockAdmin(admin.ModelAdmin):
             return format_html('<span>-</span>')
     change_display.short_description = 'Change'
     
-    actions = ['increase_price_10', 'decrease_price_10', 'random_fluctuation', 'set_previous_to_current', 'activate_stocks', 'deactivate_stocks']
+    actions = ['update_all_prices', 'random_fluctuation', 'increase_price_10', 'decrease_price_10', 'set_previous_to_current', 'activate_stocks', 'deactivate_stocks']
+    
+    def update_all_prices(self, request, queryset):
+        """⚡ FORCE UPDATE: Apply random price changes to ALL active stocks"""
+        from django.contrib import messages
+        
+        # Update ALL active stocks, not just selected
+        all_active_stocks = Stock.objects.filter(is_active=True)
+        count = 0
+        
+        for stock in all_active_stocks:
+            stock.update_price_random(volatility=0.02)
+            count += 1
+        
+        messages.success(
+            request, 
+            f'⚡ FORCE UPDATE COMPLETE! Updated {count} active stock(s) with ±2% volatility. '
+            f'Teams will see new prices on their next refresh (auto-refreshes every 15 seconds).'
+        )
+    update_all_prices.short_description = "⚡ FORCE UPDATE ALL PRICES (±2% volatility)"
+    
+    def random_fluctuation(self, request, queryset):
+        """Apply random price fluctuation to selected stocks only"""
+        for stock in queryset:
+            stock.update_price_random(volatility=0.02)
+        self.message_user(request, f'Applied random price changes to {queryset.count()} selected stock(s).')
+    random_fluctuation.short_description = "📊 Apply random fluctuation (selected only)"
     
     def increase_price_10(self, request, queryset):
         """Increase price by 10 percent"""
@@ -134,13 +161,6 @@ class StockAdmin(admin.ModelAdmin):
             stock.save()
         self.message_user(request, f'Increased price by 10% for {queryset.count()} stock(s).')
     increase_price_10.short_description = "📈 Increase price by 10 percent"
-    
-    def random_fluctuation(self, request, queryset):
-        """Apply random price fluctuation to simulate market movement"""
-        for stock in queryset:
-            stock.update_price_random(volatility=0.02)
-        self.message_user(request, f'Applied random price changes to {queryset.count()} stock(s).')
-    random_fluctuation.short_description = "📊 Apply random fluctuation"
     
     def decrease_price_10(self, request, queryset):
         """Decrease price by 10 percent"""
