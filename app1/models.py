@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+import random
 
 # Create your models here.
 class users(AbstractUser):
@@ -49,6 +50,27 @@ class Stock(models.Model):
         if self.previous_close > 0:
             return ((self.current_price - self.previous_close) / self.previous_close) * 100
         return 0
+    
+    def update_price_random(self, volatility=0.02):
+        """
+        Update stock price with random fluctuation
+        volatility: percentage (0.02 = ±2% change)
+        """
+        # Generate random percentage change between -volatility and +volatility
+        change_percent = random.uniform(-volatility, volatility)
+        
+        # Calculate new price
+        new_price = self.current_price * (1 + change_percent)
+        
+        # Ensure price doesn't go below $0.01
+        new_price = max(0.01, new_price)
+        
+        # Update prices
+        self.previous_close = self.current_price
+        self.current_price = round(new_price, 2)
+        self.save()
+        
+        return self.current_price
 
 
 class SimulatorSettings(models.Model):

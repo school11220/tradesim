@@ -125,7 +125,7 @@ class StockAdmin(admin.ModelAdmin):
             return format_html('<span>-</span>')
     change_display.short_description = 'Change'
     
-    actions = ['increase_price_10', 'decrease_price_10', 'set_previous_to_current', 'activate_stocks', 'deactivate_stocks']
+    actions = ['increase_price_10', 'decrease_price_10', 'random_fluctuation', 'set_previous_to_current', 'activate_stocks', 'deactivate_stocks']
     
     def increase_price_10(self, request, queryset):
         """Increase price by 10 percent"""
@@ -134,6 +134,13 @@ class StockAdmin(admin.ModelAdmin):
             stock.save()
         self.message_user(request, f'Increased price by 10% for {queryset.count()} stock(s).')
     increase_price_10.short_description = "Increase price by 10 percent"
+    
+    def random_fluctuation(self, request, queryset):
+        """Apply random price fluctuation (±2%) to simulate market movement"""
+        for stock in queryset:
+            stock.update_price_random(volatility=0.02)
+        self.message_user(request, f'Applied random price changes to {queryset.count()} stock(s).')
+    random_fluctuation.short_description = "📊 Apply random fluctuation (±2%)"
     
     def decrease_price_10(self, request, queryset):
         """Decrease price by 10 percent"""
