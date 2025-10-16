@@ -133,14 +133,14 @@ class StockAdmin(admin.ModelAdmin):
             stock.current_price *= 1.10
             stock.save()
         self.message_user(request, f'Increased price by 10% for {queryset.count()} stock(s).')
-    increase_price_10.short_description = "Increase price by 10 percent"
+    increase_price_10.short_description = "📈 Increase price by 10 percent"
     
     def random_fluctuation(self, request, queryset):
-        """Apply random price fluctuation (±2%) to simulate market movement"""
+        """Apply random price fluctuation to simulate market movement"""
         for stock in queryset:
             stock.update_price_random(volatility=0.02)
         self.message_user(request, f'Applied random price changes to {queryset.count()} stock(s).')
-    random_fluctuation.short_description = "📊 Apply random fluctuation (±2%)"
+    random_fluctuation.short_description = "📊 Apply random fluctuation"
     
     def decrease_price_10(self, request, queryset):
         """Decrease price by 10 percent"""
@@ -148,7 +148,7 @@ class StockAdmin(admin.ModelAdmin):
             stock.current_price *= 0.90
             stock.save()
         self.message_user(request, f'Decreased price by 10% for {queryset.count()} stock(s).')
-    decrease_price_10.short_description = "Decrease price by 10 percent"
+    decrease_price_10.short_description = "📉 Decrease price by 10 percent"
     
     def set_previous_to_current(self, request, queryset):
         """Set previous close to current price (reset change to 0)"""
