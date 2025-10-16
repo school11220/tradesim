@@ -194,9 +194,18 @@ def holdings(request,query):
     
 def addtoWatchlist(request,query):
     logedInUser=request.user
+    
+    # Ensure watchlist is properly structured
+    if not isinstance(logedInUser.watchlist, dict):
+        logedInUser.watchlist = {"symbol": []}
+    
+    if "symbol" not in logedInUser.watchlist:
+        logedInUser.watchlist["symbol"] = []
+    
     watchlist=logedInUser.watchlist
     print(watchlist)
     print(query)
+    
     if(query in watchlist["symbol"]):
         print("Already Exists")
         return JsonResponse({"response":"Already Exists"})

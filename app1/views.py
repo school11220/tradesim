@@ -221,11 +221,18 @@ def stockdetails(requests,query):
 def removewatchlist(requests,symbol):
     # print(symbol)
     user = requests.user
-    user.watchlist["symbol"].remove(symbol)
-
-    # user.watchlist=wlist
-
-    # remove=users(watchlist=wlist)
+    
+    # Ensure watchlist is properly structured
+    if not isinstance(user.watchlist, dict):
+        user.watchlist = {"symbol": []}
+    
+    if "symbol" not in user.watchlist:
+        user.watchlist["symbol"] = []
+    
+    # Remove the symbol if it exists
+    if symbol in user.watchlist["symbol"]:
+        user.watchlist["symbol"].remove(symbol)
+    
     user.save()
     return redirect("dashboard")
 
