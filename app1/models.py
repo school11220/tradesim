@@ -59,14 +59,17 @@ class Stock(models.Model):
         # Generate random percentage change between -volatility and +volatility
         change_percent = random.uniform(-volatility, volatility)
         
+        # Ensure current_price is float
+        current = float(self.current_price)
+        
         # Calculate new price
-        new_price = self.current_price * (1 + change_percent)
+        new_price = current * (1 + change_percent)
         
         # Ensure price doesn't go below $0.01
         new_price = max(0.01, new_price)
         
         # Update prices
-        self.previous_close = self.current_price
+        self.previous_close = current
         self.current_price = round(new_price, 2)
         self.save()
         

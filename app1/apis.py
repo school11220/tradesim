@@ -242,14 +242,14 @@ def trigger_price_update(request):
         # Update each stock
         for stock in stocks:
             old_price = float(stock.current_price)
-            new_price = stock.update_price_random(volatility)
+            new_price = float(stock.update_price_random(volatility))
             change = new_price - old_price
             change_percent = (change / old_price * 100) if old_price > 0 else 0
             
             updates.append({
                 'symbol': stock.symbol,
                 'old_price': round(old_price, 2),
-                'new_price': round(new_price, 2),
+                'new_price': round(float(new_price), 2),
                 'change': round(change, 2),
                 'change_percent': round(change_percent, 2)
             })
