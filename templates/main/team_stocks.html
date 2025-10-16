@@ -373,10 +373,15 @@
                id="searchInput" 
                placeholder="🔍 Search stocks by symbol or name...">
         
-        <button class="refresh-btn" id="refreshBtn" onclick="refreshPrices()">
-            <span id="refreshIcon">🔄</span>
-            <span id="refreshText">Refresh Prices</span>
-        </button>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span id="lastUpdateTime" style="font-size: 0.9rem; color: var(--text-light);">
+                Last updated: Never
+            </span>
+            <button class="refresh-btn" id="refreshBtn" onclick="refreshPrices()">
+                <span id="refreshIcon">🔄</span>
+                <span id="refreshText">Refresh Prices</span>
+            </button>
+        </div>
         
         <a href="{% url 'team_portfolio' %}" class="refresh-btn" style="background: var(--success); text-decoration: none;">
             💼 View Portfolio
@@ -522,8 +527,17 @@
                     }
                 });
                 
-                // Success notification
-                showNotification('✅ Prices updated!', 'success');
+                // Success notification with timestamp
+                const now = new Date().toLocaleTimeString();
+                showNotification(`✅ Prices updated at ${now}`, 'success');
+                console.log('Price update successful at', now, data);
+                
+                // Update last update time display
+                const lastUpdateEl = document.getElementById('lastUpdateTime');
+                if (lastUpdateEl) {
+                    lastUpdateEl.textContent = `Last updated: ${now}`;
+                    lastUpdateEl.style.color = 'var(--success)';
+                }
             }
         } catch (error) {
             console.error('Error refreshing prices:', error);
