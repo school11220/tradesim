@@ -77,16 +77,28 @@ class CustomUserAdmin(UserAdmin):
     add_bonus_5000.short_description = "Add $5,000 bonus"
 
 
+# Unregister Stock if already registered (in case of conflicts)
+try:
+    admin.site.unregister(Stock)
+except admin.sites.NotRegistered:
+    pass
+
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
-    """Admin interface for controlling stock prices - MINIMAL VERSION FOR DEBUGGING"""
-    list_display = ('symbol', 'name', 'current_price', 'is_active')
-    list_filter = ('is_active',)
-    search_fields = ('symbol', 'name')
-    ordering = ('symbol',)
+    """Admin interface for controlling stock prices - ULTRA MINIMAL"""
+    list_display = ('symbol', 'name', 'current_price')
+    search_fields = ('symbol',)
     
-    # NO custom methods, NO actions - absolute minimum
-    pass
+    # Absolutely nothing else - no actions, no filters, no methods
+    
+    def has_add_permission(self, request):
+        return True
+    
+    def has_change_permission(self, request, obj=None):
+        return True
+    
+    def has_delete_permission(self, request, obj=None):
+        return True
     
     fieldsets = (
         ('Stock Information', {
