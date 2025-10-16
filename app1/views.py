@@ -562,6 +562,39 @@ def team_dashboard(request):
             }
             return render(request, "main/team_dashboard.html", data)
         
+        # Prepare enriched portfolio data with current prices
+        from app1.models import Stock
+        enriched_portfolio = {}
+        total_holdings_value = 0
+        
+        for symbol, holding_data in team.portfolio.items():
+            try:
+                stock = Stock.objects.get(symbol=symbol, is_active=True)
+                quantity = holding_data.get('quantity', 0)
+                avg_price = holding_data.get('avg_price', 0)
+                current_price = float(stock.current_price)
+                
+                cost_basis = quantity * avg_price
+                current_value = quantity * current_price
+                unrealized_pl = current_value - cost_basis
+                unrealized_pl_percent = (unrealized_pl / cost_basis * 100) if cost_basis > 0 else 0
+                
+                enriched_portfolio[symbol] = {
+                    'quantity': quantity,
+                    'avg_price': avg_price,
+                    'current_price': current_price,
+                    'cost_basis': cost_basis,
+                    'current_value': current_value,
+                    'unrealized_pl': unrealized_pl,
+                    'unrealized_pl_percent': unrealized_pl_percent,
+                    'name': stock.name
+                }
+                
+                total_holdings_value += current_value
+            except Stock.DoesNotExist:
+                # Stock no longer exists or inactive
+                enriched_portfolio[symbol] = holding_data
+        
         # Prepare team data
         data = {
             "team": team,
@@ -571,7 +604,8 @@ def team_dashboard(request):
             "portfolio_value": team.portfolio_value,
             "profit_loss": team.profit_loss,
             "profit_loss_percent": team.profit_loss_percent,
-            "portfolio": team.portfolio,
+            "portfolio": enriched_portfolio,
+            "holdings_value": total_holdings_value,
             "total_trades": team.total_trades,
             "recent_trades": team.trade_history[-10:] if team.trade_history else [],
             "event": team.event,
