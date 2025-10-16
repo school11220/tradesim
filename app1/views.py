@@ -106,6 +106,11 @@ def user_a(requests):
         user = requests.user
         print("--------User--------")
         print(user)
+        
+        # Ensure stockbuy is a dict
+        if not isinstance(user.stockbuy, dict):
+            user.stockbuy = {}
+        
         stockname=user.stockbuy.keys()
         print(stockname)
         stock=[]
@@ -117,6 +122,13 @@ def user_a(requests):
         user=requests.user
         print(user)
         print(user.watchlist)
+        
+        # Ensure watchlist exists and has symbol key
+        if not isinstance(user.watchlist, dict):
+            user.watchlist = {"symbol": ["SONY","MSFT","META","GOOG","AAPL"]}
+        if "symbol" not in user.watchlist:
+            user.watchlist["symbol"] = ["SONY","MSFT","META","GOOG","AAPL"]
+        
         watchlistsymbols=""
         for i in user.watchlist["symbol"]:
             watchlistsymbols=i+","+watchlistsymbols
@@ -137,62 +149,74 @@ def user_a(requests):
         return data
 
 def dashboard(requests):
-    if requests.user.is_authenticated:
-        data = user_a(requests)
+    try:
+        if requests.user.is_authenticated:
+            data = user_a(requests)
 
-        data["title"]="Dashboard"
-        print("---------------Data-----------------")
-        print(data)
-        print("---------------Data-----------------")
-        return render(requests,"main/dashboard.html",data)
-    else:
+            data["title"]="Dashboard"
+            print("---------------Data-----------------")
+            print(data)
+            print("---------------Data-----------------")
+            return render(requests,"main/dashboard.html",data)
+        else:
+            return redirect("login")
+    except Exception as e:
+        print(f"Dashboard error: {e}")
         return redirect("login")
 
 def stockdetails(requests,query):
-    if requests.user.is_authenticated:
-        todayepoch=int(today())
-        start=str(todayepoch-457199)
-        end=str(todayepoch)
-        url="https://query2.finance.yahoo.com/v8/finance/chart/"+query+"?period1="+str(todayepoch-457199)+"&period2="+str(todayepoch)+"&interval=5m&includePrePost=true&events=div%7Csplit%7Cearn&&lang=en-US&region=US"
-        headers={"User-Agent": "Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"}
-        response = req.get(url,headers=headers)
-        data = response.json()
+    try:
+        if requests.user.is_authenticated:
+            todayepoch=int(today())
+            start=str(todayepoch-457199)
+            end=str(todayepoch)
+            url="https://query2.finance.yahoo.com/v8/finance/chart/"+query+"?period1="+str(todayepoch-457199)+"&period2="+str(todayepoch)+"&interval=5m&includePrePost=true&events=div%7Csplit%7Cearn&&lang=en-US&region=US"
+            headers={"User-Agent": "Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"}
+            response = req.get(url,headers=headers)
+            data = response.json()
 
-        store={}
-        data=data["chart"]["result"][0]["meta"]
-        previousclose=data["previousClose"]
+            store={}
+            data=data["chart"]["result"][0]["meta"]
+            previousclose=data["previousClose"]
 
-        for i in data.keys():
-            if i == ("firstTradeDate") or i == ("regularMarketTime") or i == ("hasPrePostMarketData") or i == ("gmtoffset") or i == ("timezone") or i == ("instrumentType") or i == ("fullExchangeName") or i == ("regularMarketVolume") or i == ("previousClose") or i == ("regularMarketPrice"):
-                continue
-            if i == "scale":
-                break
-            store[i.capitalize()]=data[i]
+            for i in data.keys():
+                if i == ("firstTradeDate") or i == ("regularMarketTime") or i == ("hasPrePostMarketData") or i == ("gmtoffset") or i == ("timezone") or i == ("instrumentType") or i == ("fullExchangeName") or i == ("regularMarketVolume") or i == ("previousClose") or i == ("regularMarketPrice"):
+                    continue
+                if i == "scale":
+                    break
+                store[i.capitalize()]=data[i]
+                
             
-        
-        print("Yes")
-        user=requests.user
-        # print(user.watchlist["symbol"])
-        watchlistsymbols=""
-        for i in user.watchlist["symbol"]:
-            watchlistsymbols=i+","+watchlistsymbols
-        # print(watchlistsymbols)
-        data={
-            "username":user.username,
-            "name":user.firstname,
-            "email":user.email,
-            "totalbalance":round(user.balance,2),
-            "watchlist":watchlistsymbols,
-            "data":store,
-            "query":query,
-            "previousclose":previousclose,
-            "start":start,
-            "end":end,
-            "title":query,
-        }
-        return render(requests,"main/details.html",data)
-    else:
-        return redirect("login")
+            print("Yes")
+            user=requests.user
+            
+            # Ensure watchlist exists
+            if not isinstance(user.watchlist, dict) or "symbol" not in user.watchlist:
+                user.watchlist = {"symbol": ["SONY","MSFT","META","GOOG","AAPL"]}
+            
+            watchlistsymbols=""
+            for i in user.watchlist["symbol"]:
+                watchlistsymbols=i+","+watchlistsymbols
+            # print(watchlistsymbols)
+            data={
+                "username":user.username,
+                "name":user.firstname,
+                "email":user.email,
+                "totalbalance":round(user.balance,2),
+                "watchlist":watchlistsymbols,
+                "data":store,
+                "query":query,
+                "previousclose":previousclose,
+                "start":start,
+                "end":end,
+                "title":query,
+            }
+            return render(requests,"main/details.html",data)
+        else:
+            return redirect("login")
+    except Exception as e:
+        print(f"Stockdetails error: {e}")
+        return redirect("dashboard")
 
 def removewatchlist(requests,symbol):
     # print(symbol)
@@ -260,100 +284,133 @@ def updatestocks(requests):
         return render(requests,"login/login.html")
 
 def user_portfolio(requests):
-
-    if requests.user.is_authenticated:
-        user = requests.user
-        stockname=user.stockbuy.keys()
-        stock=[]
-        price=[]
-        for i in stockname:
-            stock.append(i)
-            price.append(user.stockbuy[i]["boughtat"]*user.stockbuy[i]["quantity"])
-        print("Yes")
-        user=requests.user
-        print(user)
-        print(user.watchlist)
-        watchlistsymbols=""
-        for i in user.watchlist["symbol"]:
-            watchlistsymbols=i+","+watchlistsymbols
-        
-        # print(watchlistsymbols)
-        data={
-            "username":user.username,
-            "name":user.firstname,
-            "email":user.email,
-            "totalbalance":round(user.balance,2),
-            "watchlist":watchlistsymbols,
-            "stock":stock,
-            "price":price,
-            "start":today()-70000,
-            "end":today(),
-            "currentlyholding":"hidden",
-        }
-        return render(requests,"main/portfolio.html",data)
-    else:
+    try:
+        if requests.user.is_authenticated:
+            user = requests.user
+            
+            # Ensure stockbuy is a dict
+            if not isinstance(user.stockbuy, dict):
+                user.stockbuy = {}
+            
+            stockname=user.stockbuy.keys()
+            stock=[]
+            price=[]
+            for i in stockname:
+                stock.append(i)
+                price.append(user.stockbuy[i]["boughtat"]*user.stockbuy[i]["quantity"])
+            print("Yes")
+            user=requests.user
+            print(user)
+            print(user.watchlist)
+            
+            # Ensure watchlist exists
+            if not isinstance(user.watchlist, dict) or "symbol" not in user.watchlist:
+                user.watchlist = {"symbol": ["SONY","MSFT","META","GOOG","AAPL"]}
+            
+            watchlistsymbols=""
+            for i in user.watchlist["symbol"]:
+                watchlistsymbols=i+","+watchlistsymbols
+            
+            # print(watchlistsymbols)
+            data={
+                "username":user.username,
+                "name":user.firstname,
+                "email":user.email,
+                "totalbalance":round(user.balance,2),
+                "watchlist":watchlistsymbols,
+                "stock":stock,
+                "price":price,
+                "start":today()-70000,
+                "end":today(),
+                "currentlyholding":"hidden",
+            }
+            return render(requests,"main/portfolio.html",data)
+        else:
+            return redirect("login")
+    except Exception as e:
+        print(f"Portfolio error: {e}")
         return redirect("login")
 
 def errorpage(requests):
-    if requests.user.is_authenticated:
-        user = requests.user
-        stockname=user.stockbuy.keys()
-        stock=[]
-        price=[]
-        for i in stockname:
-            stock.append(i)
-            price.append(user.stockbuy[i]["boughtat"]*user.stockbuy[i]["quantity"])
-        print("Yes")
-        user=requests.user
-        print(user)
-        print(user.watchlist)
-        watchlistsymbols=""
-        for i in user.watchlist["symbol"]:
-            watchlistsymbols=i+","+watchlistsymbols
-        
-        # print(watchlistsymbols)
-        data={
-            "username":user.username,
-            "name":user.firstname,
-            "email":user.email,
-            "totalbalance":round(user.balance,2),
-            "watchlist":watchlistsymbols,
-            "stock":stock,
-            "price":price,
-        }
-        return render(requests,"main/error.html",data)
-    else:
+    try:
+        if requests.user.is_authenticated:
+            user = requests.user
+            
+            # Ensure stockbuy is a dict
+            if not isinstance(user.stockbuy, dict):
+                user.stockbuy = {}
+            
+            stockname=user.stockbuy.keys()
+            stock=[]
+            price=[]
+            for i in stockname:
+                stock.append(i)
+                price.append(user.stockbuy[i]["boughtat"]*user.stockbuy[i]["quantity"])
+            print("Yes")
+            user=requests.user
+            print(user)
+            print(user.watchlist)
+            
+            # Ensure watchlist exists
+            if not isinstance(user.watchlist, dict) or "symbol" not in user.watchlist:
+                user.watchlist = {"symbol": ["SONY","MSFT","META","GOOG","AAPL"]}
+            
+            watchlistsymbols=""
+            for i in user.watchlist["symbol"]:
+                watchlistsymbols=i+","+watchlistsymbols
+            
+            # print(watchlistsymbols)
+            data={
+                "username":user.username,
+                "name":user.firstname,
+                "email":user.email,
+                "totalbalance":round(user.balance,2),
+                "watchlist":watchlistsymbols,
+                "stock":stock,
+                "price":price,
+            }
+            return render(requests,"main/error.html",data)
+        else:
+            return redirect("login")
+    except Exception as e:
+        print(f"Errorpage error: {e}")
         return redirect("login")
 
 def settings(requests):
-    if requests.user.is_authenticated:
-        data = user_a(requests)
-        data["currentcheck"]="hidden"
-        data["matchcheck"]="hidden"
-        data["title"]="Settings"
-        if requests.method == "POST":
-            currentPass=requests.POST.get("currentpassword")
-            newpass=requests.POST.get("newpassword")
-            repeatpass=requests.POST.get("repeat-password")
-            user = requests.user
-            print("---------------------------------------")
-            print(user.password)
-            if (user.password == currentPass):
-                data["currentcheck"]="hidden"
-                if(newpass == repeatpass):
-                    data["matchcheck"]="hidden"
-                    user.password = newpass
-                    user.save()
+    try:
+        if requests.user.is_authenticated:
+            data = user_a(requests)
+            data["currentcheck"]="hidden"
+            data["matchcheck"]="hidden"
+            data["title"]="Settings"
+            if requests.method == "POST":
+                currentPass=requests.POST.get("currentpassword")
+                newpass=requests.POST.get("newpassword")
+                repeatpass=requests.POST.get("repeat-password")
+                user = requests.user
+                print("---------------------------------------")
+                print(user.password)
+                if (user.password == currentPass):
+                    data["currentcheck"]="hidden"
+                    if(newpass == repeatpass):
+                        data["matchcheck"]="hidden"
+                        user.password = newpass
+                        user.save()
+                    else:
+                        print("Password Doesn't Match")
+                        data["matchcheck"]="visible"
                 else:
-                    print("Password Doesn't Match")
-                    data["matchcheck"]="visible"
-            else:
-                data["currentcheck"]="visible"
-                print("Password is Not Correct")
-            print(currentPass)
-            print(newpass)
-            print(repeatpass)
-    return render(requests,"main/settings.html",data)
+                    data["currentcheck"]="visible"
+                    print("Password is Not Correct")
+                print(currentPass)
+                print(newpass)
+                print(repeatpass)
+            return render(requests,"main/settings.html",data)
+        else:
+            return redirect("login")
+    except Exception as e:
+        print(f"Settings error: {e}")
+        return redirect("login")
 
 
 # ============ TEAM REGISTRATION & LOGIN ============
