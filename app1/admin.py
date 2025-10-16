@@ -79,7 +79,8 @@ class CustomUserAdmin(UserAdmin):
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
     """Admin interface for controlling stock prices"""
-    change_list_template = 'admin/stock_changelist.html'
+    # Temporarily disable custom template to diagnose issue
+    # change_list_template = 'admin/stock_changelist.html'
     list_display = ('symbol', 'name', 'current_price_display', 'previous_close', 'change_display', 'is_active', 'last_updated')
     list_filter = ('is_active', 'last_updated')
     search_fields = ('symbol', 'name')
