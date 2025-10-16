@@ -1,0 +1,18 @@
+name: Update Stock Prices
+
+on:
+  schedule:
+    # Run every 5 minutes during trading hours (9 AM - 4 PM UTC)
+    - cron: '*/5 9-16 * * 1-5'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Update Stock Prices
+        run: |
+          echo "Updating stock prices..."
+          curl -X GET "https://tradesim-lyart.vercel.app/api/update-prices?volatility=0.02"
+          echo "Stock prices updated!"

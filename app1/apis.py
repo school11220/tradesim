@@ -213,3 +213,58 @@ def addtoWatchlist(request,query):
         watchlist["symbol"].append(query)
         logedInUser.save()
         return JsonResponse({"response":"Added "+query})
+
+
+def trigger_price_update(request):
+    """
+    API endpoint to trigger stock price updates
+    Can be called by cron jobs or manually to update all stock prices
+    """
+    from app1.models import Stock
+    import random
+    
+    try:
+        # Get volatility from query param, default 2%
+        volatility = float(request.GET.get('volatility', 0.02))
+        
+        # Get all active stocks
+        stocks = Stock.objects.filter(is_active=True)
+        
+        if not stocks.exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'No active stocks found'
+            })
+        
+        updated_count = 0
+        updates = []
+        
+        # Update each stock
+        for stock in stocks:
+            old_price = float(stock.current_price)
+            new_price = stock.update_price_random(volatility)
+            change = new_price - old_price
+            change_percent = (change / old_price * 100) if old_price > 0 else 0
+            
+            updates.append({
+                'symbol': stock.symbol,
+                'old_price': round(old_price, 2),
+                'new_price': round(new_price, 2),
+                'change': round(change, 2),
+                'change_percent': round(change_percent, 2)
+            })
+            
+            updated_count += 1
+        
+        return JsonResponse({
+            'success': True,
+            'updated_count': updated_count,
+            'volatility': volatility,
+            'updates': updates
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

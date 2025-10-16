@@ -6,7 +6,7 @@ from .views import (
     team_stocks, team_trade, team_portfolio, team_stock_prices_api
 )
 
-from .apis import search,watchlist,fetchdetails,graphdata,portfolio,portfoliochart,income,holdings,addtoWatchlist
+from .apis import search,watchlist,fetchdetails,graphdata,portfolio,portfoliochart,income,holdings,addtoWatchlist,trigger_price_update
 
 urlpatterns = [
     path('health', health_check, name="health"),
@@ -48,5 +48,6 @@ urlpatterns = [
     path('api/portfolio',portfolio,name="portfolio"),
     path('api/portfoliochart',portfoliochart,name="portfoliochart"),
     path('api/incomecalculate',income,name="income"),
+    path('api/update-prices',trigger_price_update,name="trigger_price_update"),
     path('api/holdings/<str:query>',holdings,name="holdings"),
 ]
