@@ -441,7 +441,7 @@
                 {% else %}
                 <div class="price-badge down">
                     <span>↘</span>
-                    <span>-${{ stock.price_change|abs|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)</span>
+                    <span>${{ stock.price_change|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)</span>
                 </div>
                 {% endif %}
             </div>
@@ -488,7 +488,7 @@
                     {% if profit_loss >= 0 %}
                     💰 Profit: +${{ profit_loss|floatformat:2 }} (+{{ profit_loss_percent|floatformat:2 }}%)
                     {% else %}
-                    📉 Loss: -${{ profit_loss|abs|floatformat:2 }} ({{ profit_loss_percent|floatformat:2 }}%)
+                    📉 Loss: ${{ profit_loss|floatformat:2 }} ({{ profit_loss_percent|floatformat:2 }}%)
                     {% endif %}
                 </div>
             </div>

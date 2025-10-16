@@ -409,8 +409,11 @@
             </div>
             
             <span class="price-change {% if stock.price_change >= 0 %}up{% else %}down{% endif %}">
-                {% if stock.price_change >= 0 %}▲{% else %}▼{% endif %}
-                ${{ stock.price_change|floatformat:2|abs }} ({{ stock.price_change_percent|floatformat:2 }}%)
+                {% if stock.price_change >= 0 %}
+                    ▲ ${{ stock.price_change|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)
+                {% else %}
+                    ▼ ${{ stock.price_change|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)
+                {% endif %}
             </span>
             
             {% if stock.owns %}
