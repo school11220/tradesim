@@ -196,7 +196,7 @@ class Team(models.Model):
         for symbol, data in self.portfolio.items():
             try:
                 stock = Stock.objects.get(symbol=symbol)
-                holdings_value += stock.current_price * data.get('quantity', 0)
+                holdings_value += float(stock.current_price) * data.get('quantity', 0)
             except Stock.DoesNotExist:
                 pass
         return float(self.balance) + holdings_value
