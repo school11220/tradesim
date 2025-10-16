@@ -2,172 +2,227 @@
 
 {% block content %}
 <style>
+    * { box-sizing: border-box; }
+    
     .trade-container {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 0 auto;
         padding: 20px;
     }
     
-    .back-button {
-        background: white;
-        border: 2px solid #e0e0e0;
-        padding: 10px 20px;
-        border-radius: 10px;
-        color: #333;
-        text-decoration: none;
+    .back-link {
         display: inline-flex;
         align-items: center;
         gap: 8px;
+        padding: 10px 20px;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        color: #333;
+        text-decoration: none;
         margin-bottom: 20px;
         transition: all 0.3s;
+        font-weight: 600;
     }
     
-    .back-button:hover {
+    .back-link:hover {
         border-color: #667eea;
         color: #667eea;
+        transform: translateX(-5px);
     }
     
-    .trade-grid {
+    .trade-layout {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 25px;
         margin-top: 20px;
     }
     
-    .stock-info-card {
+    .stock-panel {
         background: white;
-        border-radius: 15px;
-        padding: 30px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        border-radius: 20px;
+        padding: 35px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
     }
     
     .stock-header {
-        border-bottom: 2px solid #f0f0f0;
-        padding-bottom: 20px;
-        margin-bottom: 20px;
+        border-bottom: 3px solid #f5f5f5;
+        padding-bottom: 25px;
+        margin-bottom: 25px;
+    }
+    
+    .symbol-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        margin-bottom: 12px;
     }
     
     .stock-symbol {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #333;
+        font-size: 2.8rem;
+        font-weight: 800;
+        color: #1a1a1a;
+        margin: 10px 0 5px 0;
     }
     
     .stock-name {
-        font-size: 1.2rem;
-        color: #666;
-        margin-top: 5px;
-    }
-    
-    .current-price {
-        font-size: 3rem;
-        font-weight: bold;
-        color: #333;
-        margin: 20px 0;
-    }
-    
-    .price-change {
-        display: inline-flex;
-        align-items: center;
-        padding: 8px 16px;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 1.1rem;
-    }
-    
-    .price-change.positive {
-        background: #e8f5e9;
-        color: #2e7d32;
-    }
-    
-    .price-change.negative {
-        background: #ffebee;
-        color: #c62828;
-    }
-    
-    .info-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 15px 0;
-        border-bottom: 1px solid #f0f0f0;
-    }
-    
-    .info-label {
+        font-size: 1.3rem;
         color: #666;
         font-weight: 500;
     }
     
-    .info-value {
-        font-weight: 600;
-        color: #333;
+    .price-section {
+        margin: 30px 0;
     }
     
-    .holding-section {
-        background: #f8f9fa;
-        padding: 20px;
-        border-radius: 10px;
-        margin-top: 20px;
-    }
-    
-    .holding-title {
-        font-size: 1.2rem;
-        font-weight: bold;
+    .current-price {
+        font-size: 3.5rem;
+        font-weight: 800;
+        color: #1a1a1a;
         margin-bottom: 15px;
-        color: #333;
     }
     
-    .profit-loss {
-        font-size: 1.5rem;
-        font-weight: bold;
-        margin-top: 10px;
+    .price-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1.15rem;
     }
     
-    .profit-loss.positive {
-        color: #2e7d32;
+    .price-badge.up {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        color: #155724;
     }
     
-    .profit-loss.negative {
-        color: #c62828;
+    .price-badge.down {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        color: #721c24;
     }
     
-    .trade-card {
-        background: white;
-        border-radius: 15px;
-        padding: 30px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    .info-grid {
+        display: grid;
+        gap: 18px;
+        margin-top: 25px;
     }
     
-    .trade-tabs {
+    .info-item {
         display: flex;
-        gap: 10px;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #555;
+        font-size: 1rem;
+    }
+    
+    .info-value {
+        font-weight: 700;
+        color: #1a1a1a;
+        font-size: 1.1rem;
+    }
+    
+    .holdings-panel {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 20%, #ffd140 100%);
+        padding: 25px;
+        border-radius: 16px;
+        margin-top: 25px;
+        color: white;
+    }
+    
+    .holdings-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+    
+    .holdings-grid {
+        display: grid;
+        gap: 12px;
+    }
+    
+    .holdings-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .holdings-item:last-child {
+        border-bottom: none;
+    }
+    
+    .pnl-display {
+        font-size: 1.8rem;
+        font-weight: 800;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 2px solid rgba(255,255,255,0.3);
+    }
+    
+    .trade-panel {
+        background: white;
+        border-radius: 20px;
+        padding: 35px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        position: sticky;
+        top: 20px;
+    }
+    
+    .trade-title {
+        font-size: 1.8rem;
+        font-weight: 800;
+        margin-bottom: 25px;
+        color: #1a1a1a;
+    }
+    
+    .action-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
         margin-bottom: 30px;
     }
     
-    .tab-button {
-        flex: 1;
-        padding: 15px;
-        border: 2px solid #e0e0e0;
+    .tab-btn {
+        padding: 16px;
+        border: 3px solid #e0e0e0;
         background: white;
-        border-radius: 10px;
-        font-weight: 600;
+        border-radius: 12px;
+        font-weight: 700;
         font-size: 1.1rem;
         cursor: pointer;
         transition: all 0.3s;
+        color: #666;
     }
     
-    .tab-button.active {
+    .tab-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .tab-btn.active {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border-color: #667eea;
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
     }
     
-    .tab-button.sell {
-        border-color: #e0e0e0;
-    }
-    
-    .tab-button.sell.active {
+    .tab-btn.sell-btn.active {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         border-color: #f5576c;
+        box-shadow: 0 8px 20px rgba(245, 87, 108, 0.3);
     }
     
     .trade-form {
@@ -176,111 +231,181 @@
     
     .trade-form.active {
         display: block;
+        animation: fadeIn 0.3s;
     }
     
-    .form-group {
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .input-group {
         margin-bottom: 25px;
     }
     
-    .form-label {
+    .input-label {
         display: block;
-        font-weight: 600;
+        font-weight: 700;
         margin-bottom: 10px;
         color: #333;
+        font-size: 1.05rem;
     }
     
-    .form-input {
+    .input-wrapper {
+        position: relative;
+    }
+    
+    .quantity-input {
         width: 100%;
-        padding: 15px;
-        border: 2px solid #e0e0e0;
-        border-radius: 10px;
-        font-size: 1.1rem;
-        transition: border-color 0.3s;
+        padding: 18px 20px;
+        border: 3px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 1.3rem;
+        font-weight: 700;
+        transition: all 0.3s;
+        text-align: center;
     }
     
-    .form-input:focus {
+    .quantity-input:focus {
         outline: none;
         border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
     }
     
-    .calculation-box {
+    .quick-buttons {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-top: 12px;
+    }
+    
+    .quick-btn {
+        padding: 10px;
+        background: #f8f9fa;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+    
+    .quick-btn:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+        transform: scale(1.05);
+    }
+    
+    .cost-summary {
         background: #f8f9fa;
         padding: 20px;
-        border-radius: 10px;
-        margin-top: 20px;
+        border-radius: 12px;
+        margin-bottom: 25px;
     }
     
-    .calc-row {
+    .cost-row {
         display: flex;
         justify-content: space-between;
-        margin: 10px 0;
-        font-size: 1.1rem;
+        margin-bottom: 12px;
+        font-size: 1.05rem;
     }
     
-    .calc-row.total {
-        border-top: 2px solid #ddd;
+    .cost-label {
+        color: #666;
+        font-weight: 600;
+    }
+    
+    .cost-value {
+        font-weight: 700;
+        color: #1a1a1a;
+        font-size: 1.15rem;
+    }
+    
+    .total-row {
         padding-top: 15px;
-        margin-top: 15px;
-        font-weight: bold;
-        font-size: 1.3rem;
+        border-top: 2px solid #e0e0e0;
+        margin-top: 5px;
     }
     
-    .submit-button {
+    .total-row .cost-value {
+        font-size: 1.5rem;
+        color: #667eea;
+    }
+    
+    .submit-btn {
         width: 100%;
         padding: 18px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
         border: none;
-        border-radius: 10px;
-        font-weight: 600;
+        border-radius: 12px;
+        font-weight: 800;
         font-size: 1.2rem;
         cursor: pointer;
         transition: all 0.3s;
-        margin-top: 20px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
     
-    .submit-button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    .submit-btn.buy-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
     }
     
-    .submit-button.sell {
+    .submit-btn.buy-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+    }
+    
+    .submit-btn.sell-btn {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        box-shadow: 0 10px 30px rgba(245, 87, 108, 0.3);
     }
     
-    .submit-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
+    .submit-btn.sell-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(245, 87, 108, 0.4);
     }
     
     .alert {
-        padding: 15px 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        font-weight: 500;
+        padding: 18px 25px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        font-weight: 600;
+        animation: slideDown 0.3s;
+    }
+    
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     .alert-success {
-        background: #d4edda;
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
         color: #155724;
-        border: 1px solid #c3e6cb;
+        border-left: 5px solid #28a745;
     }
     
     .alert-error {
-        background: #f8d7da;
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
         color: #721c24;
-        border: 1px solid #f5c6cb;
+        border-left: 5px solid #dc3545;
     }
     
-    @media (max-width: 768px) {
-        .trade-grid {
+    @media (max-width: 968px) {
+        .trade-layout {
             grid-template-columns: 1fr;
+        }
+        
+        .trade-panel {
+            position: static;
         }
     }
 </style>
 
 <div class="trade-container">
-    <a href="{% url 'team_stocks' %}" class="back-button">
+    <a href="{% url 'team_stocks' %}" class="back-link">
         ← Back to Stocks
     </a>
     
@@ -296,68 +421,91 @@
     </div>
     {% endif %}
     
-    <div class="trade-grid">
-        <!-- Stock Information -->
-        <div class="stock-info-card">
+    <div class="trade-layout">
+        <!-- Stock Information Panel -->
+        <div class="stock-panel">
             <div class="stock-header">
+                <span class="symbol-badge">STOCK</span>
                 <div class="stock-symbol">{{ stock.symbol }}</div>
                 <div class="stock-name">{{ stock.name }}</div>
             </div>
             
-            <div class="current-price">${{ stock.current_price|floatformat:2 }}</div>
-            
-            <span class="price-change {% if stock.price_change >= 0 %}positive{% else %}negative{% endif %}">
-                {% if stock.price_change >= 0 %}↑{% else %}↓{% endif %}
-                ${{ stock.price_change|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)
-            </span>
-            
-            <div class="info-row">
-                <span class="info-label">Previous Close</span>
-                <span class="info-value">${{ stock.previous_close|floatformat:2 }}</span>
+            <div class="price-section">
+                <div class="current-price" id="currentPrice">${{ stock.current_price|floatformat:2 }}</div>
+                
+                {% if stock.price_change >= 0 %}
+                <div class="price-badge up">
+                    <span>↗</span>
+                    <span>+${{ stock.price_change|floatformat:2 }} (+{{ stock.price_change_percent|floatformat:2 }}%)</span>
+                </div>
+                {% else %}
+                <div class="price-badge down">
+                    <span>↘</span>
+                    <span>-${{ stock.price_change|abs|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)</span>
+                </div>
+                {% endif %}
             </div>
             
-            <div class="info-row">
-                <span class="info-label">Your Balance</span>
-                <span class="info-value">${{ balance|floatformat:2 }}</span>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Previous Close</span>
+                    <span class="info-value">${{ stock.previous_close|floatformat:2 }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Available Balance</span>
+                    <span class="info-value" id="teamBalance">${{ balance|floatformat:2 }}</span>
+                </div>
             </div>
             
             {% if holding.quantity > 0 %}
-            <div class="holding-section">
-                <div class="holding-title">📊 Your Holdings</div>
+            <div class="holdings-panel">
+                <div class="holdings-title">📊 Your Holdings</div>
                 
-                <div class="info-row">
-                    <span class="info-label">Quantity</span>
-                    <span class="info-value">{{ holding.quantity }} shares</span>
+                <div class="holdings-grid">
+                    <div class="holdings-item">
+                        <span>Shares Owned</span>
+                        <span style="font-weight: 700; font-size: 1.2rem;">{{ holding.quantity }}</span>
+                    </div>
+                    
+                    <div class="holdings-item">
+                        <span>Average Price</span>
+                        <span style="font-weight: 700;">${{ holding.avg_price|floatformat:2 }}</span>
+                    </div>
+                    
+                    <div class="holdings-item">
+                        <span>Invested Value</span>
+                        <span style="font-weight: 700;">${{ invested_value|floatformat:2 }}</span>
+                    </div>
+                    
+                    <div class="holdings-item">
+                        <span>Current Value</span>
+                        <span style="font-weight: 700;">${{ current_value|floatformat:2 }}</span>
+                    </div>
                 </div>
                 
-                <div class="info-row">
-                    <span class="info-label">Average Price</span>
-                    <span class="info-value">${{ holding.avg_price|floatformat:2 }}</span>
-                </div>
-                
-                <div class="info-row">
-                    <span class="info-label">Invested</span>
-                    <span class="info-value">${{ invested_value|floatformat:2 }}</span>
-                </div>
-                
-                <div class="info-row">
-                    <span class="info-label">Current Value</span>
-                    <span class="info-value">${{ current_value|floatformat:2 }}</span>
-                </div>
-                
-                <div class="profit-loss {% if profit_loss >= 0 %}positive{% else %}negative{% endif %}">
-                    {% if profit_loss >= 0 %}+{% endif %}${{ profit_loss|floatformat:2 }}
-                    ({{ profit_loss_percent|floatformat:2 }}%)
+                <div class="pnl-display">
+                    {% if profit_loss >= 0 %}
+                    💰 Profit: +${{ profit_loss|floatformat:2 }} (+{{ profit_loss_percent|floatformat:2 }}%)
+                    {% else %}
+                    📉 Loss: -${{ profit_loss|abs|floatformat:2 }} ({{ profit_loss_percent|floatformat:2 }}%)
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
         </div>
         
-        <!-- Trading Form -->
-        <div class="trade-card">
-            <div class="trade-tabs">
-                <button class="tab-button active" data-tab="buy">🛒 Buy</button>
-                <button class="tab-button sell" data-tab="sell">💰 Sell</button>
+        <!-- Trading Panel -->
+        <div class="trade-panel">
+            <h2 class="trade-title">Trade {{ stock.symbol }}</h2>
+            
+            <div class="action-tabs">
+                <button class="tab-btn active" onclick="switchTab('buy')" id="buyTab">
+                    🛒 Buy
+                </button>
+                <button class="tab-btn sell-btn" onclick="switchTab('sell')" id="sellTab">
+                    💰 Sell
+                </button>
             </div>
             
             <!-- Buy Form -->
@@ -365,27 +513,44 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="buy">
                 
-                <div class="form-group">
-                    <label class="form-label">Quantity (shares)</label>
-                    <input type="number" name="quantity" class="form-input" id="buyQuantity" min="1" value="1" required>
+                <div class="input-group">
+                    <label class="input-label">Quantity</label>
+                    <div class="input-wrapper">
+                        <input type="number" 
+                               class="quantity-input" 
+                               name="quantity" 
+                               id="buyQuantity" 
+                               min="1" 
+                               value="1"
+                               oninput="updateBuyCost()"
+                               required>
+                    </div>
+                    <div class="quick-buttons">
+                        <button type="button" class="quick-btn" onclick="setQuantity('buy', 1)">1</button>
+                        <button type="button" class="quick-btn" onclick="setQuantity('buy', 10)">10</button>
+                        <button type="button" class="quick-btn" onclick="setQuantity('buy', 50)">50</button>
+                        <button type="button" class="quick-btn" onclick="setQuantity('buy', 100)">100</button>
+                    </div>
                 </div>
                 
-                <div class="calculation-box">
-                    <div class="calc-row">
-                        <span>Price per share:</span>
-                        <span>${{ stock.current_price|floatformat:2 }}</span>
+                <div class="cost-summary">
+                    <div class="cost-row">
+                        <span class="cost-label">Price per Share</span>
+                        <span class="cost-value">${{ stock.current_price|floatformat:2 }}</span>
                     </div>
-                    <div class="calc-row">
-                        <span>Quantity:</span>
-                        <span id="buyQtyDisplay">1</span>
+                    <div class="cost-row">
+                        <span class="cost-label">Shares</span>
+                        <span class="cost-value" id="buyShares">1</span>
                     </div>
-                    <div class="calc-row total">
-                        <span>Total Cost:</span>
-                        <span id="buyTotal">${{ stock.current_price|floatformat:2 }}</span>
+                    <div class="cost-row total-row">
+                        <span class="cost-label" style="font-size: 1.2rem;">Total Cost</span>
+                        <span class="cost-value" id="buyTotal">${{ stock.current_price|floatformat:2 }}</span>
                     </div>
                 </div>
                 
-                <button type="submit" class="submit-button">Buy {{ stock.symbol }}</button>
+                <button type="submit" class="submit-btn buy-btn">
+                    🛒 Buy Now
+                </button>
             </form>
             
             <!-- Sell Form -->
@@ -393,76 +558,113 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="sell">
                 
-                <div class="form-group">
-                    <label class="form-label">Quantity (shares) - Available: {{ holding.quantity }}</label>
-                    <input type="number" name="quantity" class="form-input" id="sellQuantity" min="1" max="{{ holding.quantity }}" value="{% if holding.quantity > 0 %}1{% else %}0{% endif %}" required {% if holding.quantity == 0 %}disabled{% endif %}>
+                <div class="input-group">
+                    <label class="input-label">Quantity (Max: {{ holding.quantity }})</label>
+                    <div class="input-wrapper">
+                        <input type="number" 
+                               class="quantity-input" 
+                               name="quantity" 
+                               id="sellQuantity" 
+                               min="1" 
+                               max="{{ holding.quantity }}"
+                               value="{% if holding.quantity > 0 %}1{% else %}0{% endif %}"
+                               oninput="updateSellCost()"
+                               required>
+                    </div>
+                    {% if holding.quantity > 0 %}
+                    <div class="quick-buttons">
+                        {% if holding.quantity >= 1 %}<button type="button" class="quick-btn" onclick="setQuantity('sell', 1)">1</button>{% endif %}
+                        {% if holding.quantity >= 10 %}<button type="button" class="quick-btn" onclick="setQuantity('sell', 10)">10</button>{% endif %}
+                        {% if holding.quantity >= 50 %}<button type="button" class="quick-btn" onclick="setQuantity('sell', 50)">50</button>{% endif %}
+                        <button type="button" class="quick-btn" onclick="setQuantity('sell', {{ holding.quantity }})">All</button>
+                    </div>
+                    {% endif %}
                 </div>
                 
-                <div class="calculation-box">
-                    <div class="calc-row">
-                        <span>Price per share:</span>
-                        <span>${{ stock.current_price|floatformat:2 }}</span>
+                <div class="cost-summary">
+                    <div class="cost-row">
+                        <span class="cost-label">Price per Share</span>
+                        <span class="cost-value">${{ stock.current_price|floatformat:2 }}</span>
                     </div>
-                    <div class="calc-row">
-                        <span>Quantity:</span>
-                        <span id="sellQtyDisplay">{% if holding.quantity > 0 %}1{% else %}0{% endif %}</span>
+                    <div class="cost-row">
+                        <span class="cost-label">Shares</span>
+                        <span class="cost-value" id="sellShares">{% if holding.quantity > 0 %}1{% else %}0{% endif %}</span>
                     </div>
-                    <div class="calc-row total">
-                        <span>Total Revenue:</span>
-                        <span id="sellTotal">${{ stock.current_price|floatformat:2 }}</span>
+                    <div class="cost-row total-row">
+                        <span class="cost-label" style="font-size: 1.2rem;">Total Revenue</span>
+                        <span class="cost-value" id="sellTotal">${% if holding.quantity > 0 %}{{ stock.current_price|floatformat:2 }}{% else %}0.00{% endif %}</span>
                     </div>
                 </div>
                 
-                <button type="submit" class="submit-button sell" {% if holding.quantity == 0 %}disabled{% endif %}>Sell {{ stock.symbol }}</button>
+                {% if holding.quantity > 0 %}
+                <button type="submit" class="submit-btn sell-btn">
+                    💰 Sell Now
+                </button>
+                {% else %}
+                <button type="button" class="submit-btn sell-btn" style="opacity: 0.5; cursor: not-allowed;" disabled>
+                    No Shares to Sell
+                </button>
+                {% endif %}
             </form>
         </div>
     </div>
 </div>
 
 <script>
-    const currentPrice = {{ stock.current_price }};
+    const stockPrice = {{ stock.current_price }};
     
-    // Tab switching
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.addEventListener('click', function() {
-            const tab = this.dataset.tab;
-            
-            // Update buttons
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Update forms
-            document.querySelectorAll('.trade-form').forEach(form => form.classList.remove('active'));
-            document.getElementById(tab + 'Form').classList.add('active');
-        });
-    });
-    
-    // Buy calculation
-    const buyQuantity = document.getElementById('buyQuantity');
-    const buyQtyDisplay = document.getElementById('buyQtyDisplay');
-    const buyTotal = document.getElementById('buyTotal');
-    
-    buyQuantity.addEventListener('input', function() {
-        const qty = parseInt(this.value) || 0;
-        const total = qty * currentPrice;
+    function switchTab(tab) {
+        // Update tab buttons
+        document.getElementById('buyTab').classList.remove('active');
+        document.getElementById('sellTab').classList.remove('active');
         
-        buyQtyDisplay.textContent = qty;
-        buyTotal.textContent = '$' + total.toFixed(2);
-    });
-    
-    // Sell calculation
-    const sellQuantity = document.getElementById('sellQuantity');
-    const sellQtyDisplay = document.getElementById('sellQtyDisplay');
-    const sellTotal = document.getElementById('sellTotal');
-    
-    if (sellQuantity) {
-        sellQuantity.addEventListener('input', function() {
-            const qty = parseInt(this.value) || 0;
-            const total = qty * currentPrice;
-            
-            sellQtyDisplay.textContent = qty;
-            sellTotal.textContent = '$' + total.toFixed(2);
-        });
+        // Update forms
+        document.getElementById('buyForm').classList.remove('active');
+        document.getElementById('sellForm').classList.remove('active');
+        
+        if (tab === 'buy') {
+            document.getElementById('buyTab').classList.add('active');
+            document.getElementById('buyForm').classList.add('active');
+        } else {
+            document.getElementById('sellTab').classList.add('active');
+            document.getElementById('sellForm').classList.add('active');
+        }
     }
+    
+    function setQuantity(type, value) {
+        const input = document.getElementById(type + 'Quantity');
+        input.value = value;
+        
+        if (type === 'buy') {
+            updateBuyCost();
+        } else {
+            updateSellCost();
+        }
+    }
+    
+    function updateBuyCost() {
+        const quantity = parseInt(document.getElementById('buyQuantity').value) || 0;
+        const total = quantity * stockPrice;
+        
+        document.getElementById('buyShares').textContent = quantity;
+        document.getElementById('buyTotal').textContent = '$' + total.toFixed(2);
+    }
+    
+    function updateSellCost() {
+        const quantity = parseInt(document.getElementById('sellQuantity').value) || 0;
+        const total = quantity * stockPrice;
+        
+        document.getElementById('sellShares').textContent = quantity;
+        document.getElementById('sellTotal').textContent = '$' + total.toFixed(2);
+    }
+    
+    // Auto-scroll to alert if present
+    window.addEventListener('load', function() {
+        const alert = document.querySelector('.alert');
+        if (alert) {
+            alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
 </script>
+
 {% endblock %}

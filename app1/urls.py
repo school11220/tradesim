@@ -3,7 +3,7 @@ from .views import (
     home, signup, user_login, createuser, logout, dashboard, stockdetails, 
     removewatchlist, updatestocks, user_portfolio, errorpage, settings, health_check,
     team_signup, team_login, team_dashboard, team_logout,
-    team_stocks, team_trade, team_portfolio
+    team_stocks, team_trade, team_portfolio, team_stock_prices_api
 )
 
 from .apis import search,watchlist,fetchdetails,graphdata,portfolio,portfoliochart,income,holdings,addtoWatchlist
@@ -28,6 +28,7 @@ urlpatterns = [
     path("team/stocks", team_stocks, name="team_stocks"),
     path("team/trade/<str:symbol>", team_trade, name="team_trade"),
     path("team/portfolio", team_portfolio, name="team_portfolio"),
+    path("team/api/stock-prices", team_stock_prices_api, name="team_stock_prices_api"),
     
     # User dashboard
     path('dashboard',dashboard,name="dashboard"),

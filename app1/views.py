@@ -884,3 +884,33 @@ def team_portfolio(request):
         from django.contrib import messages
         messages.error(request, f"Error loading portfolio: {str(e)}")
         return redirect('team_dashboard')
+
+
+def team_stock_prices_api(request):
+    """API endpoint to fetch current stock prices for AJAX updates"""
+    from django.http import JsonResponse
+    from app1.models import Stock
+    
+    if not request.session.get('is_team'):
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    try:
+        stocks = Stock.objects.filter(is_active=True).values(
+            'symbol', 'current_price', 'previous_close'
+        )
+        
+        stock_data = {}
+        for stock in stocks:
+            change = float(stock['current_price']) - float(stock['previous_close'])
+            change_percent = (change / float(stock['previous_close']) * 100) if stock['previous_close'] > 0 else 0
+            
+            stock_data[stock['symbol']] = {
+                'price': float(stock['current_price']),
+                'change': change,
+                'change_percent': change_percent
+            }
+        
+        return JsonResponse({'success': True, 'stocks': stock_data})
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

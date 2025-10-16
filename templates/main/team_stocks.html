@@ -230,8 +230,13 @@
                 | Event: <strong>{{ event.name }}</strong>
                 {% endif %}
             </div>
-            <div style="font-size: 0.9rem; opacity: 0.9;">
-                💡 Prices update in real-time when admin makes changes
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div style="font-size: 0.9rem; opacity: 0.9;">
+                    � Auto-refresh: <strong id="autoRefreshStatus">ON</strong>
+                </div>
+                <button id="toggleAutoRefresh" style="background: rgba(255,255,255,0.2); border: 2px solid white; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">
+                    Pause
+                </button>
             </div>
         </div>
         
@@ -302,20 +307,121 @@
 
 <script>
     // Real-time search filter
-    document.getElementById('searchBox').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        const stockCards = document.querySelectorAll('.stock-card');
-        
-        stockCards.forEach(card => {
-            const symbol = card.dataset.symbol.toLowerCase();
-            const name = card.dataset.name.toLowerCase();
+    const searchBox = document.getElementById('searchBox');
+    if (searchBox) {
+        searchBox.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const stockCards = document.querySelectorAll('.stock-card');
             
-            if (symbol.includes(searchTerm) || name.includes(searchTerm)) {
-                card.style.display = 'block';
+            stockCards.forEach(card => {
+                const symbol = card.dataset.symbol.toLowerCase();
+                const name = card.dataset.name.toLowerCase();
+                
+                if (symbol.includes(searchTerm) || name.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    // Auto-refresh functionality with AJAX
+    let autoRefreshEnabled = true;
+    let refreshInterval;
+    
+    const toggleButton = document.getElementById('toggleAutoRefresh');
+    const statusText = document.getElementById('autoRefreshStatus');
+    
+    function updatePrices() {
+        fetch('{% url "team_stock_prices_api" %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update each stock card
+                    Object.keys(data.stocks).forEach(symbol => {
+                        const card = document.querySelector(`.stock-card[data-symbol="${symbol}"]`);
+                        if (card) {
+                            const stockData = data.stocks[symbol];
+                            
+                            // Update price
+                            const priceElement = card.querySelector('.stock-price');
+                            if (priceElement) {
+                                priceElement.textContent = '$' + stockData.price.toFixed(2);
+                                
+                                // Add flash animation
+                                priceElement.style.animation = 'none';
+                                setTimeout(() => {
+                                    priceElement.style.animation = 'flash 0.5s';
+                                }, 10);
+                            }
+                            
+                            // Update price change
+                            const changeElement = card.querySelector('.price-change');
+                            if (changeElement) {
+                                const isPositive = stockData.change >= 0;
+                                changeElement.className = `price-change ${isPositive ? 'positive' : 'negative'}`;
+                                changeElement.innerHTML = `
+                                    ${isPositive ? '↑' : '↓'}
+                                    $${Math.abs(stockData.change).toFixed(2)} (${stockData.change_percent.toFixed(2)}%)
+                                `;
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => console.error('Error updating prices:', error));
+    }
+    
+    function startAutoRefresh() {
+        if (autoRefreshEnabled) {
+            refreshInterval = setInterval(updatePrices, 10000); // Update every 10 seconds
+        }
+    }
+    
+    if (toggleButton && statusText) {
+        toggleButton.addEventListener('click', function() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            
+            if (autoRefreshEnabled) {
+                statusText.textContent = 'ON';
+                toggleButton.textContent = 'Pause';
+                startAutoRefresh();
+                showNotification('✓ Auto-refresh enabled', '#4CAF50');
             } else {
-                card.style.display = 'none';
+                statusText.textContent = 'OFF';
+                toggleButton.textContent = 'Resume';
+                clearInterval(refreshInterval);
+                showNotification('Auto-refresh paused', '#ff9800');
             }
         });
-    });
+        
+        // Start auto-refresh on page load
+        startAutoRefresh();
+    }
+    
+    function showNotification(message, color) {
+        const notification = document.createElement('div');
+        notification.textContent = message;
+        notification.style.cssText = `position: fixed; top: 20px; right: 20px; background: ${color}; color: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 10000; animation: slideIn 0.3s;`;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 2000);
+    }
+    
+    // Add CSS animation for price flash
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes flash {
+            0%, 100% { background-color: transparent; }
+            50% { background-color: #fff3cd; }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
 </script>
+
+{% endblock %}
 {% endblock %}
