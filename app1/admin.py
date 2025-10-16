@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import users, Stock, SimulatorSettings, Event, Team
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils import timezone
 
 # Register your models here.
@@ -258,15 +259,15 @@ class EventAdmin(admin.ModelAdmin):
     def is_active_display(self, obj):
         """Display active status"""
         if obj.is_active:
-            return format_html('<span style="color: green;">&#x2713; Active</span>')
-        return format_html('<span style="color: gray;">&#x25CB; Inactive</span>')
+            return mark_safe('<span style="color: green;">✓ Active</span>')
+        return mark_safe('<span style="color: gray;">○ Inactive</span>')
     is_active_display.short_description = 'Active'
     
     def registration_status(self, obj):
         """Display registration status"""
         if obj.registration_open:
-            return format_html('<span style="color: green;">&#x2713; Open</span>')
-        return format_html('<span style="color: red;">&#x2717; Closed</span>')
+            return mark_safe('<span style="color: green;">✓ Open</span>')
+        return mark_safe('<span style="color: red;">✗ Closed</span>')
     registration_status.short_description = 'Registration'
     
     def team_count(self, obj):
@@ -390,10 +391,10 @@ class TeamAdmin(admin.ModelAdmin):
     def is_active_display(self, obj):
         """Display active status"""
         if obj.is_disqualified:
-            return format_html('<span style="color: red;">&#x274C; Disqualified</span>')
+            return mark_safe('<span style="color: red;">✗ Disqualified</span>')
         if obj.is_active:
-            return format_html('<span style="color: green;">&#x2713; Active</span>')
-        return format_html('<span style="color: gray;">&#x25CB; Inactive</span>')
+            return mark_safe('<span style="color: green;">✓ Active</span>')
+        return mark_safe('<span style="color: gray;">○ Inactive</span>')
     is_active_display.short_description = 'Status'
     
     def trade_history_display(self, obj):
