@@ -118,7 +118,7 @@ class StockAdmin(admin.ModelAdmin):
             change = obj.price_change
             percent = obj.price_change_percent
             color = 'green' if change >= 0 else 'red'
-            arrow = '&uarr;' if change >= 0 else '&darr;'  # Use HTML entities for arrows
+            arrow = 'UP' if change >= 0 else 'DOWN'  # Use text instead of symbols
             return format_html(
                 '<span style="color: {};">{} ${:,.2f} ({:+.2f}%)</span>',
                 color, arrow, abs(change), percent
