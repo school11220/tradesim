@@ -23,6 +23,7 @@ class Stock(models.Model):
     """Model for controlling stock prices in the simulator"""
     symbol = models.CharField(max_length=10, unique=True, primary_key=True, help_text="Stock ticker symbol (e.g., AAPL)")
     name = models.CharField(max_length=100, help_text="Company name")
+    sector = models.CharField(max_length=50, default="Technology", help_text="Industry sector")
     current_price = models.FloatField(default=100.0, help_text="Current price per share")
     previous_close = models.FloatField(default=100.0, help_text="Previous closing price")
     is_active = models.BooleanField(default=True, help_text="Whether this stock is available for trading")
