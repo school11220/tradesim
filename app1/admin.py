@@ -41,10 +41,11 @@ class CustomUserAdmin(UserAdmin):
     def balance_display(self, obj):
         """Display balance with color coding"""
         color = 'green' if obj.balance >= 10000 else 'orange' if obj.balance >= 5000 else 'red'
+        balance_str = f'${obj.balance:,.2f}'
         return format_html(
-            '<strong style="color: {};">${:,.2f}</strong>',
+            '<strong style="color: {};">{}</strong>',
             color,
-            obj.balance
+            balance_str
         )
     balance_display.short_description = 'Balance'
     balance_display.admin_order_field = 'balance'
@@ -327,11 +328,11 @@ class TeamAdmin(admin.ModelAdmin):
         pl = obj.profit_loss
         color = 'green' if pl >= 0 else 'red'
         symbol = '+' if pl >= 0 else ''
+        pl_str = f'{symbol}{pl:,.2f}'
         return format_html(
-            '<strong style="color: {};">{}{:,.2f}</strong>',
+            '<strong style="color: {};">{}</strong>',
             color,
-            symbol,
-            pl
+            pl_str
         )
     profit_loss_display.short_description = 'Profit/Loss'
     
