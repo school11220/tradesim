@@ -1,0 +1,169 @@
+{% extends 'login/loginBase.html' %}
+
+{% block content %}
+
+<div class="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
+    <div class="max-w-3xl w-full">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h2 class="text-4xl font-bold gradient-text mb-2">Team Registration</h2>
+            <p class="text-slate-400">Register your team for the trading competition</p>
+        </div>
+
+        {% if success %}
+        <!-- Success Message -->
+        <div class="glass-effect rounded-2xl p-8 shadow-2xl text-center mb-6">
+            <div class="text-6xl mb-4">🎉</div>
+            <h3 class="text-2xl font-bold text-green-400 mb-4">Registration Successful!</h3>
+            <p class="text-slate-300 mb-4">Team <strong>{{ team_name }}</strong> has been registered.</p>
+            
+            <div class="bg-slate-800/50 border-2 border-purple-500 rounded-lg p-6 mb-6">
+                <p class="text-sm text-slate-400 mb-2">Your Team Code:</p>
+                <p class="text-4xl font-bold text-purple-400 tracking-wider">{{ team_code }}</p>
+                <p class="text-xs text-slate-500 mt-2">Save this code! You'll need it to login.</p>
+            </div>
+            
+            <a href="{% url 'team_login' %}" 
+                class="inline-block btn-primary px-8 py-3 rounded-lg font-semibold text-white shadow-lg">
+                Go to Team Login
+            </a>
+        </div>
+        {% else %}
+
+        <!-- Registration Form -->
+        <div class="glass-effect rounded-2xl p-8 shadow-2xl">
+            {% if error %}
+            <div class="flex items-center p-4 mb-4 text-sm text-red-400 rounded-lg border border-red-500/30" 
+                 style="background: rgba(239, 68, 68, 0.1);" role="alert">
+                <svg class="w-5 h-5 me-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+                </svg>
+                <span class="font-medium">{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <form class="space-y-6" method="POST">
+                {% csrf_token %}
+
+                <!-- Event Selection -->
+                <div>
+                    <label for="event_id" class="block mb-2 text-sm font-medium text-slate-200">
+                        Select Event *
+                    </label>
+                    <select name="event_id" id="event_id" required
+                        class="w-full px-4 py-3 rounded-lg text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155;">
+                        <option value="">Choose an event...</option>
+                        {% for event in events %}
+                        <option value="{{ event.id }}">
+                            {{ event.name }} - Starting {{ event.start_time|date:"M d, Y" }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if not events %}
+                    <p class="mt-2 text-sm text-red-400">No events are currently accepting registrations.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Team Name -->
+                <div>
+                    <label for="team_name" class="block mb-2 text-sm font-medium text-slate-200">
+                        Team Name *
+                    </label>
+                    <input type="text" name="team_name" id="team_name" required
+                        class="w-full px-4 py-3 rounded-lg text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155;"
+                        placeholder="Enter your team name" />
+                </div>
+
+                <!-- Leader Information -->
+                <div class="grid md:grid-cols-2 gap-5">
+                    <div>
+                        <label for="leader_name" class="block mb-2 text-sm font-medium text-slate-200">
+                            Team Leader Name *
+                        </label>
+                        <input type="text" name="leader_name" id="leader_name" required
+                            class="w-full px-4 py-3 rounded-lg text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155;"
+                            placeholder="Leader's full name" />
+                    </div>
+
+                    <div>
+                        <label for="leader_email" class="block mb-2 text-sm font-medium text-slate-200">
+                            Team Leader Email *
+                        </label>
+                        <input type="email" name="leader_email" id="leader_email" required
+                            class="w-full px-4 py-3 rounded-lg text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155;"
+                            placeholder="leader@example.com" />
+                    </div>
+                </div>
+
+                <!-- Team Members -->
+                <div>
+                    <label for="members" class="block mb-2 text-sm font-medium text-slate-200">
+                        Team Members (Optional)
+                    </label>
+                    <textarea name="members" id="members" rows="3"
+                        class="w-full px-4 py-3 rounded-lg text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155;"
+                        placeholder="Enter member names separated by commas (e.g., John Doe, Jane Smith, Bob Johnson)"></textarea>
+                    <p class="mt-2 text-xs text-slate-400">Separate multiple names with commas</p>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block mb-2 text-sm font-medium text-slate-200">
+                        Team Password *
+                    </label>
+                    <input type="password" name="password" id="password" required
+                        class="w-full px-4 py-3 rounded-lg text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155;"
+                        placeholder="Create a secure password" />
+                    <p class="mt-2 text-xs text-slate-400">Choose a password all team members can use</p>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" {% if not events %}disabled{% endif %}
+                    class="btn-primary w-full py-3 rounded-lg font-semibold text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                    Register Team
+                </button>
+
+                <!-- Login Link -->
+                <div class="text-center text-sm text-slate-400">
+                    Already registered?
+                    <a href="{% url 'team_login' %}" class="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+                        Team Login
+                    </a>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Info Cards -->
+        <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div class="glass-effect rounded-lg p-4">
+                <div class="text-2xl mb-2">🏆</div>
+                <div class="text-sm font-medium text-slate-200">Competition</div>
+                <div class="text-xs text-slate-400">Real-time Trading</div>
+            </div>
+            <div class="glass-effect rounded-lg p-4">
+                <div class="text-2xl mb-2">👥</div>
+                <div class="text-sm font-medium text-slate-200">Team Based</div>
+                <div class="text-xs text-slate-400">Collaborate</div>
+            </div>
+            <div class="glass-effect rounded-lg p-4">
+                <div class="text-2xl mb-2">📈</div>
+                <div class="text-sm font-medium text-slate-200">50+ Stocks</div>
+                <div class="text-xs text-slate-400">Real Companies</div>
+            </div>
+            <div class="glass-effect rounded-lg p-4">
+                <div class="text-2xl mb-2">🔒</div>
+                <div class="text-sm font-medium text-slate-200">Private</div>
+                <div class="text-xs text-slate-400">Team Isolated</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

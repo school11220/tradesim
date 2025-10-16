@@ -1,10 +1,12 @@
 from django.shortcuts import render,HttpResponse,redirect
-from .models import users
-from django.contrib.auth.hashers import make_password
+from .models import users, Team, Event
+from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 import requests as req
 from .mdate import today
+import secrets
+import string
 
 # Create your views here.
 def home(requests):
@@ -352,3 +354,182 @@ def settings(requests):
             print(newpass)
             print(repeatpass)
     return render(requests,"main/settings.html",data)
+
+
+# ============ TEAM REGISTRATION & LOGIN ============
+
+def team_signup(request):
+    """Team registration page"""
+    data = {
+        "error": None,
+        "success": None,
+        "events": Event.objects.filter(registration_open=True).order_by('-start_time')
+    }
+    
+    if request.method == "POST":
+        try:
+            event_id = request.POST.get("event_id")
+            team_name = request.POST.get("team_name")
+            leader_name = request.POST.get("leader_name")
+            leader_email = request.POST.get("leader_email")
+            password = request.POST.get("password")
+            members_str = request.POST.get("members", "")
+            
+            # Validation
+            if not all([event_id, team_name, leader_name, leader_email, password]):
+                data["error"] = "All fields are required"
+                return render(request, "login/team_signup.html", data)
+            
+            # Check event exists and registration is open
+            try:
+                event = Event.objects.get(id=event_id)
+                if not event.registration_open:
+                    data["error"] = "Registration is closed for this event"
+                    return render(request, "login/team_signup.html", data)
+            except Event.DoesNotExist:
+                data["error"] = "Event not found"
+                return render(request, "login/team_signup.html", data)
+            
+            # Check if team name is already taken for this event
+            if Team.objects.filter(event=event, team_name=team_name).exists():
+                data["error"] = f"Team name '{team_name}' is already taken for this event"
+                return render(request, "login/team_signup.html", data)
+            
+            # Generate unique team code
+            team_code = generate_team_code()
+            while Team.objects.filter(team_code=team_code).exists():
+                team_code = generate_team_code()
+            
+            # Parse members list
+            members = [m.strip() for m in members_str.split(",") if m.strip()]
+            
+            # Hash password
+            hashed_password = make_password(password)
+            
+            # Create team
+            team = Team.objects.create(
+                event=event,
+                team_name=team_name,
+                team_code=team_code,
+                password=hashed_password,
+                leader_name=leader_name,
+                leader_email=leader_email,
+                members=members,
+                balance=event.initial_capital,
+                portfolio={},
+                trade_history=[],
+                total_trades=0,
+                is_active=True,
+                is_disqualified=False
+            )
+            
+            # Store team code in session for display
+            data["success"] = True
+            data["team_code"] = team_code
+            data["team_name"] = team_name
+            
+            return render(request, "login/team_signup.html", data)
+            
+        except Exception as e:
+            data["error"] = f"Registration failed: {str(e)}"
+            return render(request, "login/team_signup.html", data)
+    
+    return render(request, "login/team_signup.html", data)
+
+
+def team_login(request):
+    """Team login page"""
+    data = {"error": None}
+    
+    if request.method == "POST":
+        team_code = request.POST.get("team_code")
+        password = request.POST.get("password")
+        
+        if not team_code or not password:
+            data["error"] = "Team code and password are required"
+            return render(request, "login/team_login.html", data)
+        
+        try:
+            team = Team.objects.get(team_code=team_code.upper())
+            
+            # Check if team is active
+            if not team.is_active:
+                data["error"] = "This team is not active"
+                return render(request, "login/team_login.html", data)
+            
+            if team.is_disqualified:
+                data["error"] = "This team has been disqualified"
+                return render(request, "login/team_login.html", data)
+            
+            # Verify password
+            if check_password(password, team.password):
+                # Store team info in session
+                request.session['team_id'] = team.id
+                request.session['team_code'] = team.team_code
+                request.session['team_name'] = team.team_name
+                request.session['is_team'] = True
+                return redirect('team_dashboard')
+            else:
+                data["error"] = "Invalid team code or password"
+                return render(request, "login/team_login.html", data)
+                
+        except Team.DoesNotExist:
+            data["error"] = "Invalid team code or password"
+            return render(request, "login/team_login.html", data)
+    
+    return render(request, "login/team_login.html", data)
+
+
+def team_dashboard(request):
+    """Team dashboard - isolated view showing only team's own data"""
+    if not request.session.get('is_team'):
+        return redirect('team_login')
+    
+    try:
+        team_id = request.session.get('team_id')
+        team = Team.objects.get(id=team_id)
+        
+        # Check if event is active
+        if not team.event.is_active:
+            data = {
+                "error": "The event is not currently active",
+                "team": team,
+                "event_status": team.event.status
+            }
+            return render(request, "main/team_dashboard.html", data)
+        
+        # Prepare team data
+        data = {
+            "team": team,
+            "team_code": team.team_code,
+            "team_name": team.team_name,
+            "balance": float(team.balance),
+            "portfolio_value": team.portfolio_value,
+            "profit_loss": team.profit_loss,
+            "profit_loss_percent": team.profit_loss_percent,
+            "portfolio": team.portfolio,
+            "total_trades": team.total_trades,
+            "recent_trades": team.trade_history[-10:] if team.trade_history else [],
+            "event": team.event,
+            "initial_capital": float(team.event.initial_capital),
+            "title": f"Team {team.team_name} Dashboard"
+        }
+        
+        return render(request, "main/team_dashboard.html", data)
+        
+    except Team.DoesNotExist:
+        request.session.flush()
+        return redirect('team_login')
+
+
+def team_logout(request):
+    """Logout team"""
+    request.session.flush()
+    return redirect('team_login')
+
+
+def generate_team_code():
+    """Generate a unique team code (e.g., TEAM-X7K2)"""
+    chars = string.ascii_uppercase + string.digits
+    code = ''.join(secrets.choice(chars) for _ in range(4))
+    return f"TEAM-{code}"

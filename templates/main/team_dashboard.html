@@ -1,0 +1,174 @@
+{% extends 'login/loginBase.html' %}
+
+{% block content %}
+
+<div class="min-h-screen py-8 px-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-4xl font-bold gradient-text mb-2">{{ team_name }}</h1>
+                <p class="text-slate-400">Team Code: <span class="text-purple-400 font-mono">{{ team_code }}</span></p>
+            </div>
+            <a href="{% url 'team_logout' %}" 
+               class="px-6 py-2 bg-red-500/20 border border-red-500 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">
+                Logout
+            </a>
+        </div>
+
+        {% if error %}
+        <!-- Error/Inactive Event Message -->
+        <div class="glass-effect rounded-2xl p-8 text-center mb-6">
+            <div class="text-6xl mb-4">⏸️</div>
+            <h3 class="text-2xl font-bold text-orange-400 mb-4">{{ error }}</h3>
+            <p class="text-slate-300 mb-4">Event Status: <strong>{{ event_status }}</strong></p>
+            <p class="text-slate-400">Trading will be available when the event is active.</p>
+        </div>
+        {% endif %}
+
+        <!-- Portfolio Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <!-- Total Value -->
+            <div class="glass-effect rounded-xl p-6">
+                <div class="text-sm text-slate-400 mb-2">Portfolio Value</div>
+                <div class="text-3xl font-bold {% if portfolio_value >= initial_capital %}text-green-400{% else %}text-red-400{% endif %}">
+                    ${{ portfolio_value|floatformat:2 }}
+                </div>
+            </div>
+
+            <!-- Available Cash -->
+            <div class="glass-effect rounded-xl p-6">
+                <div class="text-sm text-slate-400 mb-2">Available Cash</div>
+                <div class="text-3xl font-bold text-purple-400">
+                    ${{ balance|floatformat:2 }}
+                </div>
+            </div>
+
+            <!-- Profit/Loss -->
+            <div class="glass-effect rounded-xl p-6">
+                <div class="text-sm text-slate-400 mb-2">Profit/Loss</div>
+                <div class="text-3xl font-bold {% if profit_loss >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                    {% if profit_loss >= 0 %}+{% endif %}${{ profit_loss|floatformat:2 }}
+                </div>
+                <div class="text-sm {% if profit_loss >= 0 %}text-green-400{% else %}text-red-400{% endif %} mt-1">
+                    {% if profit_loss_percent >= 0 %}+{% endif %}{{ profit_loss_percent|floatformat:2 }}%
+                </div>
+            </div>
+
+            <!-- Total Trades -->
+            <div class="glass-effect rounded-xl p-6">
+                <div class="text-sm text-slate-400 mb-2">Total Trades</div>
+                <div class="text-3xl font-bold text-blue-400">
+                    {{ total_trades }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Information -->
+        <div class="glass-effect rounded-xl p-6 mb-8">
+            <h2 class="text-2xl font-bold text-slate-200 mb-4">Event Details</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div>
+                    <div class="text-sm text-slate-400 mb-1">Event Name</div>
+                    <div class="text-lg font-semibold text-slate-200">{{ event.name }}</div>
+                </div>
+                <div>
+                    <div class="text-sm text-slate-400 mb-1">Event Period</div>
+                    <div class="text-lg text-slate-200">
+                        {{ event.start_time|date:"M d, Y H:i" }} - {{ event.end_time|date:"M d, Y H:i" }}
+                    </div>
+                </div>
+                <div>
+                    <div class="text-sm text-slate-400 mb-1">Initial Capital</div>
+                    <div class="text-lg font-semibold text-green-400">${{ initial_capital|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Holdings -->
+        <div class="glass-effect rounded-xl p-6 mb-8">
+            <h2 class="text-2xl font-bold text-slate-200 mb-4">Current Holdings</h2>
+            {% if portfolio %}
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-slate-700">
+                            <th class="text-left py-3 px-4 text-slate-400 font-medium">Symbol</th>
+                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Quantity</th>
+                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Avg Price</th>
+                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Total Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for symbol, data in portfolio.items %}
+                        <tr class="border-b border-slate-800 hover:bg-slate-800/30 transition-colors">
+                            <td class="py-3 px-4 font-bold text-purple-400">{{ symbol }}</td>
+                            <td class="py-3 px-4 text-right text-slate-200">{{ data.quantity }}</td>
+                            <td class="py-3 px-4 text-right text-slate-200">${{ data.avg_price|floatformat:2 }}</td>
+                            <td class="py-3 px-4 text-right font-semibold text-green-400">
+                                ${{ data.avg_price|floatformat:2 }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-slate-400">
+                <div class="text-4xl mb-4">📊</div>
+                <p>No holdings yet. Start trading to build your portfolio!</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Trades -->
+        <div class="glass-effect rounded-xl p-6">
+            <h2 class="text-2xl font-bold text-slate-200 mb-4">Recent Trades</h2>
+            {% if recent_trades %}
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-slate-700">
+                            <th class="text-left py-3 px-4 text-slate-400 font-medium">Time</th>
+                            <th class="text-left py-3 px-4 text-slate-400 font-medium">Type</th>
+                            <th class="text-left py-3 px-4 text-slate-400 font-medium">Symbol</th>
+                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Quantity</th>
+                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Price</th>
+                            <th class="text-right py-3 px-4 text-slate-400 font-medium">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trade in recent_trades reversed %}
+                        <tr class="border-b border-slate-800 hover:bg-slate-800/30 transition-colors">
+                            <td class="py-3 px-4 text-slate-300 text-sm">{{ trade.time }}</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 rounded text-xs font-semibold 
+                                    {% if trade.type == 'BUY' %}bg-green-500/20 text-green-400{% else %}bg-red-500/20 text-red-400{% endif %}">
+                                    {{ trade.type }}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 font-bold text-purple-400">{{ trade.symbol }}</td>
+                            <td class="py-3 px-4 text-right text-slate-200">{{ trade.quantity }}</td>
+                            <td class="py-3 px-4 text-right text-slate-200">${{ trade.price|floatformat:2 }}</td>
+                            <td class="py-3 px-4 text-right font-semibold text-slate-200">${{ trade.total|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-slate-400">
+                <div class="text-4xl mb-4">📈</div>
+                <p>No trades yet. Start trading when the event is active!</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Privacy Notice -->
+        <div class="mt-8 text-center text-sm text-slate-500">
+            <p>🔒 This dashboard shows only your team's data. Other teams cannot see your portfolio or trades.</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

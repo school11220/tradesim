@@ -1,0 +1,91 @@
+{% extends 'login/loginBase.html' %}
+
+{% block content %}
+
+<div class="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
+    <div class="max-w-md w-full">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h2 class="text-4xl font-bold gradient-text mb-2">Team Login</h2>
+            <p class="text-slate-400">Access your team's trading dashboard</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="glass-effect rounded-2xl p-8 shadow-2xl">
+            {% if error %}
+            <div class="flex items-center p-4 mb-4 text-sm text-red-400 rounded-lg border border-red-500/30" 
+                 style="background: rgba(239, 68, 68, 0.1);" role="alert">
+                <svg class="w-5 h-5 me-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+                </svg>
+                <span class="font-medium">{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <form class="space-y-5" method="POST">
+                {% csrf_token %}
+                
+                <!-- Team Code -->
+                <div>
+                    <label for="team_code" class="block mb-2 text-sm font-medium text-slate-200">
+                        Team Code
+                    </label>
+                    <input type="text" name="team_code" id="team_code" required
+                        class="w-full px-4 py-3 rounded-lg text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 uppercase"
+                        style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155;"
+                        placeholder="TEAM-XXXX"
+                        maxlength="9" />
+                    <p class="mt-2 text-xs text-slate-400">Enter your team code (e.g., TEAM-A1B2)</p>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block mb-2 text-sm font-medium text-slate-200">
+                        Password
+                    </label>
+                    <input type="password" name="password" id="password" required
+                        class="w-full px-4 py-3 rounded-lg text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155;"
+                        placeholder="••••••••" />
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit"
+                    class="btn-primary w-full py-3 rounded-lg font-semibold text-white shadow-lg">
+                    Login to Team Dashboard
+                </button>
+
+                <!-- Register Link -->
+                <div class="text-center text-sm text-slate-400">
+                    Don't have a team yet?
+                    <a href="{% url 'team_signup' %}" class="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+                        Register Team
+                    </a>
+                </div>
+
+                <!-- Divider -->
+                <div class="flex items-center my-6">
+                    <div class="flex-1 border-t border-slate-600"></div>
+                    <span class="px-3 text-slate-500 text-sm">or</span>
+                    <div class="flex-1 border-t border-slate-600"></div>
+                </div>
+
+                <!-- Individual Login Link -->
+                <div class="text-center">
+                    <a href="{% url 'login' %}" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">
+                        Login as Individual User →
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Info Card -->
+        <div class="mt-6 glass-effect rounded-lg p-4 text-center">
+            <p class="text-sm text-slate-400">
+                <strong class="text-purple-400">🔒 Team Privacy:</strong> Each team can only see their own portfolio and trading history
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
