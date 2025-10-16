@@ -818,9 +818,9 @@ def team_portfolio(request):
         
         # Get current prices for all holdings
         from app1.models import Stock
-        portfolio_data = []
+        holdings = []
         total_invested = 0
-        total_current_value = 0
+        portfolio_value = 0
         
         # Ensure portfolio is a dict
         portfolio = team.portfolio if isinstance(team.portfolio, dict) else {}
@@ -832,11 +832,11 @@ def team_portfolio(request):
                 avg_price = holding.get('avg_price', 0)
                 
                 invested = avg_price * quantity
-                current_value = float(stock.current_price) * quantity
-                profit_loss = current_value - invested
-                profit_loss_percent = (profit_loss / invested * 100) if invested > 0 else 0
+                market_value = float(stock.current_price) * quantity
+                pl = market_value - invested
+                pl_percent = (pl / invested * 100) if invested > 0 else 0
                 
-                portfolio_data.append({
+                holdings.append({
                     'symbol': symbol,
                     'name': stock.name,
                     'sector': stock.sector if hasattr(stock, 'sector') else 'N/A',
@@ -844,33 +844,32 @@ def team_portfolio(request):
                     'avg_price': avg_price,
                     'current_price': float(stock.current_price),
                     'invested': invested,
-                    'current_value': current_value,
-                    'profit_loss': profit_loss,
-                    'profit_loss_percent': profit_loss_percent
+                    'market_value': market_value,
+                    'pl': pl,
+                    'pl_percent': pl_percent
                 })
                 
                 total_invested += invested
-                total_current_value += current_value
+                portfolio_value += market_value
                 
             except Stock.DoesNotExist:
                 # Stock might have been deactivated
                 continue
         
-        total_profit_loss = total_current_value - total_invested
-        total_profit_loss_percent = (total_profit_loss / total_invested * 100) if total_invested > 0 else 0
+        total_pl = portfolio_value - total_invested
+        pl_percent = (total_pl / total_invested * 100) if total_invested > 0 else 0
         
         data = {
             'team': team,
             'team_code': team.team_code,
             'team_name': team.team_name,
             'balance': float(team.balance),
-            'portfolio': portfolio_data,
-            'holdings_count': len(portfolio_data),
+            'holdings': holdings,
+            'holdings_count': len(holdings),
             'total_invested': total_invested,
-            'total_current_value': total_current_value,
-            'total_profit_loss': total_profit_loss,
-            'total_profit_loss_percent': total_profit_loss_percent,
-            'portfolio_value': team.portfolio_value,
+            'portfolio_value': portfolio_value,
+            'total_pl': total_pl,
+            'pl_percent': pl_percent,
             'event': team.event,
             'title': 'Portfolio'
         }
