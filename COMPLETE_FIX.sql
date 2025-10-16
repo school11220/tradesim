@@ -41,6 +41,25 @@ BEGIN
         RAISE NOTICE 'Added sector column';
     END IF;
     
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='app1_stock' AND column_name='created_at') THEN
+        ALTER TABLE app1_stock ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+        RAISE NOTICE 'Added created_at column';
+    END IF;
+    
+    -- Also add volume and market_cap if they don't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='app1_stock' AND column_name='volume') THEN
+        ALTER TABLE app1_stock ADD COLUMN volume BIGINT DEFAULT 0;
+        RAISE NOTICE 'Added volume column';
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='app1_stock' AND column_name='market_cap') THEN
+        ALTER TABLE app1_stock ADD COLUMN market_cap BIGINT DEFAULT 0;
+        RAISE NOTICE 'Added market_cap column';
+    END IF;
+    
     RAISE NOTICE 'Schema fixes completed successfully!';
 END $$;
 
