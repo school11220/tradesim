@@ -121,20 +121,20 @@ class StockAdmin(admin.ModelAdmin):
     actions = ['increase_price_10', 'decrease_price_10', 'set_previous_to_current', 'activate_stocks', 'deactivate_stocks']
     
     def increase_price_10(self, request, queryset):
-        """Increase price by 10%"""
+        """Increase price by 10 percent"""
         for stock in queryset:
             stock.current_price *= 1.10
             stock.save()
         self.message_user(request, f'Increased price by 10% for {queryset.count()} stock(s).')
-    increase_price_10.short_description = "Increase price by 10%"
+    increase_price_10.short_description = "Increase price by 10 percent"
     
     def decrease_price_10(self, request, queryset):
-        """Decrease price by 10%"""
+        """Decrease price by 10 percent"""
         for stock in queryset:
             stock.current_price *= 0.90
             stock.save()
         self.message_user(request, f'Decreased price by 10% for {queryset.count()} stock(s).')
-    decrease_price_10.short_description = "Decrease price by 10%"
+    decrease_price_10.short_description = "Decrease price by 10 percent"
     
     def set_previous_to_current(self, request, queryset):
         """Set previous close to current price (reset change to 0)"""
@@ -332,12 +332,12 @@ class TeamAdmin(admin.ModelAdmin):
         color = 'green' if percent >= 0 else 'red'
         symbol = '+' if percent >= 0 else ''
         return format_html(
-            '<strong style="color: {};">{}{:.2f}%</strong>',
+            '<strong style="color: {};">{}{:.2f}%%</strong>',
             color,
             symbol,
             percent
         )
-    profit_loss_percent_display.short_description = 'P/L %'
+    profit_loss_percent_display.short_description = 'P/L Percent'
     
     def rank_display(self, obj):
         """Display team rank"""
