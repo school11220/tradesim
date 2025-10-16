@@ -102,20 +102,26 @@ class StockAdmin(admin.ModelAdmin):
     
     def current_price_display(self, obj):
         """Display current price formatted"""
-        return format_html('<strong>${:,.2f}</strong>', obj.current_price)
+        try:
+            return format_html('<strong>${:,.2f}</strong>', float(obj.current_price))
+        except (ValueError, TypeError):
+            return format_html('<strong>$0.00</strong>')
     current_price_display.short_description = 'Current Price'
     current_price_display.admin_order_field = 'current_price'
     
     def change_display(self, obj):
         """Display price change with color coding"""
-        change = obj.price_change
-        percent = obj.price_change_percent
-        color = 'green' if change >= 0 else 'red'
-        arrow = '↑' if change >= 0 else '↓'
-        return format_html(
-            '<span style="color: {};">{} ${:,.2f} ({:+.2f}%)</span>',
-            color, arrow, abs(change), percent
-        )
+        try:
+            change = obj.price_change
+            percent = obj.price_change_percent
+            color = 'green' if change >= 0 else 'red'
+            arrow = '↑' if change >= 0 else '↓'
+            return format_html(
+                '<span style="color: {};">{} ${:,.2f} ({:+.2f}%%)</span>',
+                color, arrow, abs(change), percent
+            )
+        except (ValueError, TypeError, AttributeError):
+            return format_html('<span>-</span>')
     change_display.short_description = 'Change'
     
     actions = ['increase_price_10', 'decrease_price_10', 'set_previous_to_current', 'activate_stocks', 'deactivate_stocks']
@@ -304,13 +310,16 @@ class TeamAdmin(admin.ModelAdmin):
     
     def portfolio_value_display(self, obj):
         """Display total portfolio value"""
-        value = obj.portfolio_value
-        color = 'green' if value >= float(obj.event.initial_capital) else 'red'
-        return format_html(
-            '<strong style="color: {}; font-size: 1.1em;">${:,.2f}</strong>',
-            color,
-            value
-        )
+        try:
+            value = obj.portfolio_value
+            color = 'green' if value >= float(obj.event.initial_capital) else 'red'
+            return format_html(
+                '<strong style="color: {}; font-size: 1.1em;">${:,.2f}</strong>',
+                color,
+                float(value)
+            )
+        except (ValueError, TypeError, AttributeError):
+            return format_html('<strong>$0.00</strong>')
     portfolio_value_display.short_description = 'Portfolio Value'
     
     def profit_loss_display(self, obj):
