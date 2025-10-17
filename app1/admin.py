@@ -276,11 +276,15 @@ class StockAdmin(admin.ModelAdmin):
         except SimulatorSettings.DoesNotExist:
             use_real = False
         
+        # Get unique sectors, filtering out None/empty values
+        sectors = Stock.objects.filter(is_active=True, sector__isnull=False).exclude(sector='').values_list('sector', flat=True).distinct()
+        sectors = sorted(set(sectors))  # Sort in Python to avoid comparison issues
+        
         context = {
             'title': 'Market Control Center',
             'use_real_prices': use_real,
             'stocks': Stock.objects.filter(is_active=True),
-            'sectors': Stock.objects.values_list('sector', flat=True).distinct().order_by('sector'),
+            'sectors': sectors,
         }
         return render(request, 'admin/market_control.html', context)
 
