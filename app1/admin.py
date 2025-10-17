@@ -179,7 +179,8 @@ class StockAdmin(admin.ModelAdmin):
             'stocks': queryset,
             'title': 'Apply Custom Percentage Change'
         })
-    apply_custom_percentage.short_description = "⚙️ Apply CUSTOM % change"
+    # FIX: Escaped '%' to '%%'
+    apply_custom_percentage.short_description = "⚙️ Apply CUSTOM %% change"
     
     def sector_increase_5(self, request, queryset):
         """Increase ALL stocks in selected sectors by 5%"""
@@ -193,7 +194,8 @@ class StockAdmin(admin.ModelAdmin):
                 stock.save()
                 count += 1
         self.message_user(request, f'✅ Increased {count} stocks in {len(sectors)} sector(s) by +5%: {", ".join(sectors)}')
-    sector_increase_5.short_description = "📊 Sector Rally +5%"
+    # FIX: Escaped '%' to '%%'
+    sector_increase_5.short_description = "📊 Sector Rally +5%%"
     
     def sector_decrease_5(self, request, queryset):
         """Decrease ALL stocks in selected sectors by 5%"""
@@ -207,7 +209,8 @@ class StockAdmin(admin.ModelAdmin):
                 stock.save()
                 count += 1
         self.message_user(request, f'✅ Decreased {count} stocks in {len(sectors)} sector(s) by -5%: {", ".join(sectors)}')
-    sector_decrease_5.short_description = "📉 Sector Crash -5%"
+    # FIX: Escaped '%' to '%%'
+    sector_decrease_5.short_description = "📉 Sector Crash -5%%"
     
     def sector_increase_10(self, request, queryset):
         """Increase ALL stocks in selected sectors by 10%"""
@@ -221,7 +224,8 @@ class StockAdmin(admin.ModelAdmin):
                 stock.save()
                 count += 1
         self.message_user(request, f'✅ Increased {count} stocks in {len(sectors)} sector(s) by +10%: {", ".join(sectors)}')
-    sector_increase_10.short_description = "🚀 Major Sector Rally +10%"
+    # FIX: Escaped '%' to '%%'
+    sector_increase_10.short_description = "🚀 Major Sector Rally +10%%"
     
     def sector_decrease_10(self, request, queryset):
         """Decrease ALL stocks in selected sectors by 10%"""
@@ -235,7 +239,8 @@ class StockAdmin(admin.ModelAdmin):
                 stock.save()
                 count += 1
         self.message_user(request, f'✅ Decreased {count} stocks in {len(sectors)} sector(s) by -10%: {", ".join(sectors)}')
-    sector_decrease_10.short_description = "💥 Major Sector Crash -10%"
+    # FIX: Escaped '%' to '%%'
+    sector_decrease_10.short_description = "💥 Major Sector Crash -10%%"
     
     def get_urls(self):
         """Add custom admin URLs"""
