@@ -16,7 +16,7 @@ A Django-based stock market trading simulator with **full admin control** over s
 * **Create Your Account:** Sign up to start using Investa.
 * **Demo Money:** Once registered, you'll receive $10,000 in virtual money to begin trading.
 * **Buying Stocks:** Use your demo money to buy stocks. Simply search for the stocks you're interested in, and purchase them directly from your personalized dashboard.
-* **Real-Time Updates:** Stock prices update in real-time using the Yahoo Finance API, so you always have the latest market data at your fingertips.
+* **Real-Time Updates:** Stock prices update automatically using realistic market simulation with sentiment and sector correlations, providing dynamic market data without external APIs.
 * **Track Your Portfolio:** Monitor your assets and watch their performance over time. Your interactive dashboard makes it easy to see how your investments are doing and make informed decisions.
 
 ## Dashboard

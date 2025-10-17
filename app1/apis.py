@@ -273,24 +273,21 @@ def trigger_price_update(request):
 
 def update_prices_real(request):
     """
-    MULTI-API STOCK PRICE UPDATER
-    Uses 4 different free APIs for maximum reliability:
-    1. Financial Modeling Prep (no key needed for demo)
-    2. Alpha Vantage (free, 25 calls/day)
-    3. Finnhub (free, 60 calls/minute)
-    4. Yahoo Finance (fallback)
+    REALISTIC STOCK PRICE SIMULATION
+    Simulates realistic price movements without external API calls.
+    Features:
+    - Market sentiment (bullish/bearish/neutral)
+    - Sector-based correlations
+    - Realistic volatility (0.5-2% per update)
+    - Price bounds and safety limits
     """
     from app1.models import Stock
     from datetime import datetime
     import logging
-    import os
-    import time
+    import random
+    from decimal import Decimal
     
     logger = logging.getLogger(__name__)
-    
-    # Get API keys from environment (optional - will use free APIs if not set)
-    ALPHA_VANTAGE_KEY = os.environ.get('ALPHA_VANTAGE_API_KEY', '')
-    FINNHUB_KEY = os.environ.get('FINNHUB_API_KEY', '')
     
     try:
         stocks = Stock.objects.filter(is_active=True)
@@ -301,124 +298,98 @@ def update_prices_real(request):
                 'error': 'No active stocks found'
             })
         
-        updated_count = 0
-        failed = []
-        updates = []
-        api_usage = {}
+        # Determine market sentiment for this update cycle
+        market_sentiments = ['neutral', 'bullish', 'bearish']
+        sentiment_weights = [0.60, 0.20, 0.20]  # 60% neutral, 20% bullish, 20% bearish
+        market_sentiment = random.choices(market_sentiments, weights=sentiment_weights)[0]
         
-        logger.info(f"Starting multi-API price update for {stocks.count()} stocks")
+        # Market drift based on sentiment
+        if market_sentiment == 'bullish':
+            market_drift = random.uniform(0.1, 0.5)  # 0.1-0.5% upward bias
+        elif market_sentiment == 'bearish':
+            market_drift = random.uniform(-0.5, -0.1)  # 0.1-0.5% downward bias
+        else:
+            market_drift = random.uniform(-0.1, 0.1)  # Neutral
+        
+        # Group stocks by sector for correlation
+        sectors = {}
+        for stock in stocks:
+            sector = stock.sector or 'Other'
+            if sector not in sectors:
+                sectors[sector] = {
+                    'trend': random.uniform(-1.0, 1.0),  # Sector-specific trend
+                    'stocks': []
+                }
+            sectors[sector]['stocks'].append(stock)
+        
+        updated_count = 0
+        updates = []
+        
+        logger.info(f"Starting realistic simulation for {stocks.count()} stocks (Sentiment: {market_sentiment})")
         
         for stock in stocks:
-            current_price = None
-            api_used = None
+            old_price = float(stock.current_price)
             
-            # API 1: Financial Modeling Prep (FREE - no key needed for major stocks)
-            if not current_price:
-                try:
-                    url = f"https://financialmodelingprep.com/api/v3/quote-short/{stock.symbol}?apikey=demo"
-                    response = requests.get(url, timeout=3)
-                    data = response.json()
-                    
-                    if data and len(data) > 0 and "price" in data[0]:
-                        current_price = float(data[0]["price"])
-                        api_used = "FMP"
-                except Exception as e:
-                    logger.debug(f"FMP failed for {stock.symbol}: {str(e)[:30]}")
+            # Get sector trend
+            sector = stock.sector or 'Other'
+            sector_trend = sectors[sector]['trend']
             
-            # API 2: Alpha Vantage (if key provided)
-            if ALPHA_VANTAGE_KEY and not current_price:
-                try:
-                    url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={stock.symbol}&apikey={ALPHA_VANTAGE_KEY}"
-                    response = requests.get(url, timeout=3)
-                    data = response.json()
-                    
-                    if "Global Quote" in data and "05. price" in data["Global Quote"]:
-                        current_price = float(data["Global Quote"]["05. price"])
-                        api_used = "AlphaVantage"
-                except Exception as e:
-                    logger.debug(f"Alpha Vantage failed for {stock.symbol}: {str(e)[:30]}")
+            # Base volatility: 0.5% to 2% per update
+            base_volatility = random.uniform(0.5, 2.0)
             
-            # API 3: Finnhub (if key provided)
-            if FINNHUB_KEY and not current_price:
-                try:
-                    url = f"https://finnhub.io/api/v1/quote?symbol={stock.symbol}&token={FINNHUB_KEY}"
-                    response = requests.get(url, timeout=3)
-                    data = response.json()
-                    
-                    if "c" in data and data["c"] > 0:
-                        current_price = float(data["c"])
-                        api_used = "Finnhub"
-                except Exception as e:
-                    logger.debug(f"Finnhub failed for {stock.symbol}: {str(e)[:30]}")
+            # Combine market drift, sector trend, and random volatility
+            total_change = market_drift + (sector_trend * 0.3) + random.gauss(0, base_volatility)
             
-            # API 4: Yahoo Finance (fallback - try yfinance if available)
-            if not current_price:
-                try:
-                    import yfinance as yf
-                    ticker = yf.Ticker(stock.symbol)
-                    
-                    # Try fast_info first
-                    try:
-                        current_price = float(ticker.fast_info.last_price)
-                        api_used = "YahooFinance"
-                    except:
-                        # Try history
-                        hist = ticker.history(period="1d")
-                        if not hist.empty:
-                            current_price = float(hist['Close'].iloc[-1])
-                            api_used = "YahooFinance"
-                except Exception as e:
-                    logger.debug(f"Yahoo failed for {stock.symbol}: {str(e)[:30]}")
+            # Calculate new price
+            new_price = old_price * (1 + total_change / 100)
             
-            # Update stock if we got a price
-            if current_price and current_price > 0:
-                old_price = float(stock.current_price)
-                stock.previous_close = old_price
-                stock.current_price = round(current_price, 2)
-                stock.last_updated = datetime.now()
-                stock.save()
-                
-                # Track API usage
-                api_usage[api_used] = api_usage.get(api_used, 0) + 1
-                
-                change = current_price - old_price
-                change_pct = (change / old_price) * 100 if old_price > 0 else 0
-                
-                updates.append({
-                    'symbol': stock.symbol,
-                    'old_price': round(old_price, 2),
-                    'new_price': round(current_price, 2),
-                    'change': round(change, 2),
-                    'change_percent': round(change_pct, 2),
-                    'api': api_used
-                })
-                updated_count += 1
-            else:
-                failed.append(stock.symbol)
-                logger.warning(f"All APIs failed for {stock.symbol}")
+            # Apply safety limits
+            # 1. Price bounds: $1 minimum, $50,000 maximum
+            new_price = max(1.0, min(50000.0, new_price))
             
-            # Small delay to avoid overwhelming APIs
-            time.sleep(0.05)
+            # 2. Max single update change: ±15%
+            max_change = old_price * 0.15
+            if new_price > old_price + max_change:
+                new_price = old_price + max_change
+            elif new_price < old_price - max_change:
+                new_price = old_price - max_change
+            
+            # Round to 2 decimal places
+            new_price = round(new_price, 2)
+            
+            # Update stock
+            stock.previous_close = Decimal(str(old_price))
+            stock.current_price = Decimal(str(new_price))
+            stock.last_updated = datetime.now()
+            stock.save()
+            
+            change = new_price - old_price
+            change_pct = (change / old_price) * 100 if old_price > 0 else 0
+            
+            updates.append({
+                'symbol': stock.symbol,
+                'old_price': round(old_price, 2),
+                'new_price': round(new_price, 2),
+                'change': round(change, 2),
+                'change_percent': round(change_pct, 2)
+            })
+            updated_count += 1
         
-        success_rate = (updated_count / len(stocks) * 100) if stocks else 0
-        logger.info(f"Update complete: {updated_count}/{len(stocks)} ({success_rate:.1f}%)")
+        logger.info(f"Simulation complete: {updated_count}/{len(stocks)} stocks updated")
         
         return JsonResponse({
             'success': True,
-            'mode': 'real_market_multi_api',
+            'mode': 'realistic_simulation',
+            'market_sentiment': market_sentiment,
             'updated_count': updated_count,
             'total_stocks': len(stocks),
-            'success_rate': round(success_rate, 1),
-            'failed_count': len(failed),
-            'failed': failed[:10],
-            'api_usage': api_usage,
             'timestamp': datetime.now().isoformat(),
             'updates': updates[:15],
-            'message': f'Successfully updated {updated_count} stocks using {len(api_usage)} APIs'
+            'message': f'Successfully simulated {updated_count} stock prices (Market: {market_sentiment})'
         })
         
     except Exception as e:
-        logger.error(f"Fatal error: {str(e)}")
+        logger.error(f"Fatal error in simulation: {str(e)}")
         return JsonResponse({
             'success': False,
             'error': str(e)

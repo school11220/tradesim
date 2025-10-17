@@ -1,9 +1,9 @@
-name: Update Stock Prices with Real Market Data
+name: Update Stock Prices with Realistic Simulation
 
 on:
   schedule:
-    # Run every 1 minute during market hours for real-time updates
-    # Covers: Pre-market (9 AM UTC = 5 AM ET), Regular hours, After-hours
+    # Run every 1 minute during market hours for continuous simulation
+    # Simulates realistic market movements with sentiment and volatility
     # Monday-Friday only (trading days)
     - cron: '* 9-21 * * 1-5'
   workflow_dispatch: # Allow manual trigger from GitHub Actions tab
@@ -13,12 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Update Stock Prices from Yahoo Finance
+      - name: Simulate Stock Price Movements
         run: |
-          echo "🔄 Fetching real-time stock prices from Yahoo Finance..."
+          echo "🎲 Running realistic stock price simulation..."
           echo "⏰ Current time: $(date -u)"
           
-          # Call the real price update endpoint
+          # Call the simulation update endpoint
           response=$(curl -s -w "\n%{http_code}" -X GET "https://tradesim-lyart.vercel.app/api/update-prices-real")
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n-1)
@@ -27,12 +27,13 @@ jobs:
           echo "$body" | jq '.' || echo "$body"
           
           if [ "$http_code" -eq 200 ]; then
-            echo "✅ Stock prices updated successfully!"
+            echo "✅ Stock prices simulated successfully!"
             # Extract success metrics
             updated=$(echo "$body" | jq -r '.updated_count // 0')
             total=$(echo "$body" | jq -r '.total_stocks // 0')
-            echo "📈 Updated $updated out of $total stocks"
+            sentiment=$(echo "$body" | jq -r '.market_sentiment // "unknown"')
+            echo "📈 Updated $updated out of $total stocks (Market: $sentiment)"
           else
-            echo "❌ Failed to update prices (HTTP $http_code)"
+            echo "❌ Failed to simulate prices (HTTP $http_code)"
             exit 1
           fi

@@ -1,14 +1,16 @@
 """
-Management command to update stock prices from real market data using Yahoo Finance
+Management command to update stock prices using realistic simulation
 """
 from django.core.management.base import BaseCommand
 from app1.models import Stock
 from datetime import datetime
+from decimal import Decimal
 import sys
+import random
 
 
 class Command(BaseCommand):
-    help = 'Update stock prices from real market data using Yahoo Finance API'
+    help = 'Update stock prices using realistic market simulation'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -35,7 +37,7 @@ class Command(BaseCommand):
         
         if continuous:
             import time
-            self.stdout.write(self.style.SUCCESS(f'🔄 Starting continuous real-time updates (every {interval}s)'))
+            self.stdout.write(self.style.SUCCESS(f'🔄 Starting continuous simulation updates (every {interval}s)'))
             self.stdout.write(self.style.WARNING('Press Ctrl+C to stop\n'))
             update_count = 0
             
@@ -53,12 +55,7 @@ class Command(BaseCommand):
             self.update_prices(specific_symbols)
 
     def update_prices(self, specific_symbols=None):
-        """Fetch and update real stock prices from Yahoo Finance"""
-        try:
-            import yfinance as yf
-        except ImportError:
-            self.stdout.write(self.style.ERROR('❌ yfinance not installed. Run: pip install yfinance'))
-            return
+        """Update stock prices using realistic simulation"""
         
         # Get stocks to update
         if specific_symbols:
@@ -70,96 +67,95 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING('⚠️  No active stocks found'))
             return
         
-        symbols = [stock.symbol for stock in stocks]
-        self.stdout.write(f'📈 Fetching real-time prices for {len(symbols)} stocks...')
-        self.stdout.write(f'   Symbols: {", ".join(symbols[:10])}{"..." if len(symbols) > 10 else ""}')
+        # Determine market sentiment for this update cycle
+        market_sentiments = ['neutral', 'bullish', 'bearish']
+        sentiment_weights = [0.60, 0.20, 0.20]  # 60% neutral, 20% bullish, 20% bearish
+        market_sentiment = random.choices(market_sentiments, weights=sentiment_weights)[0]
+        
+        # Market drift based on sentiment
+        if market_sentiment == 'bullish':
+            market_drift = random.uniform(0.1, 0.5)  # 0.1-0.5% upward bias
+        elif market_sentiment == 'bearish':
+            market_drift = random.uniform(-0.5, -0.1)  # 0.1-0.5% downward bias
+        else:
+            market_drift = random.uniform(-0.1, 0.1)  # Neutral
+        
+        # Group stocks by sector for correlation
+        sectors = {}
+        for stock in stocks:
+            sector = stock.sector or 'Other'
+            if sector not in sectors:
+                sectors[sector] = {
+                    'trend': random.uniform(-1.0, 1.0),  # Sector-specific trend
+                    'stocks': []
+                }
+            sectors[sector]['stocks'].append(stock)
+        
+        sentiment_icons = {
+            'bullish': '🐂',
+            'bearish': '🐻',
+            'neutral': '➡️'
+        }
+        
+        self.stdout.write(f'📈 Simulating realistic prices for {len(stocks)} stocks...')
+        self.stdout.write(f'   Market Sentiment: {sentiment_icons[market_sentiment]} {market_sentiment.upper()} (drift: {market_drift:+.2f}%)')
         
         updated = 0
-        failed = []
-        batch_data = {}
-        
-        # Try batch download first (MUCH faster!)
-        try:
-            self.stdout.write(self.style.SUCCESS('🚀 Attempting batch download...'))
-            tickers = yf.Tickers(' '.join(symbols))
-            
-            for stock in stocks:
-                try:
-                    ticker = tickers.tickers[stock.symbol]
-                    try:
-                        batch_data[stock.symbol] = float(ticker.fast_info.last_price)
-                    except:
-                        try:
-                            hist = ticker.history(period="1d")
-                            if not hist.empty:
-                                batch_data[stock.symbol] = float(hist['Close'].iloc[-1])
-                        except:
-                            pass
-                except Exception:
-                    pass
-            
-            self.stdout.write(self.style.SUCCESS(f'✓ Batch fetched {len(batch_data)} prices'))
-        except Exception as e:
-            self.stdout.write(self.style.WARNING(f'⚠️  Batch download failed: {str(e)[:50]}'))
         
         # Process all stocks
         for stock in stocks:
             try:
-                current_price = batch_data.get(stock.symbol)
+                old_price = float(stock.current_price)
                 
-                # If batch failed, try individual fetch
-                if not current_price:
-                    ticker = yf.Ticker(stock.symbol)
-                    
-                    # Method 1: Try fast_info first (fastest and most reliable)
-                    try:
-                        fast_info = ticker.fast_info
-                        current_price = float(fast_info.last_price)
-                    except Exception:
-                    # Method 2: Fallback to history (very reliable)
-                    try:
-                        hist = ticker.history(period="1d")
-                        if not hist.empty:
-                            current_price = float(hist['Close'].iloc[-1])
-                    except Exception:
-                        # Method 3: Last resort - try info
-                        try:
-                            info = ticker.info
-                            for field in ['currentPrice', 'regularMarketPrice', 'previousClose']:
-                                if field in info and info[field]:
-                                    current_price = float(info[field])
-                                    break
-                        except Exception:
-                            pass
+                # Get sector trend
+                sector = stock.sector or 'Other'
+                sector_trend = sectors[sector]['trend']
                 
-                if current_price and current_price > 0:
-                    old_price = float(stock.current_price)
-                    stock.previous_close = old_price
-                    stock.current_price = round(current_price, 2)
-                    stock.last_updated = datetime.now()
-                    stock.save()
-                    
-                    change = current_price - old_price
-                    change_pct = (change / old_price) * 100 if old_price > 0 else 0
-                    
-                    icon = "📈" if change > 0 else "📉" if change < 0 else "➡️"
-                    color = self.style.SUCCESS if change > 0 else self.style.ERROR if change < 0 else self.style.WARNING
-                    
-                    self.stdout.write(
-                        color(f'   {icon} {stock.symbol:6s} ${old_price:8.2f} → ${current_price:8.2f}  {change:+7.2f} ({change_pct:+.2f}%)')
-                    )
-                    updated += 1
-                else:
-                    failed.append(stock.symbol)
-                    self.stdout.write(self.style.WARNING(f'   ⚠️  {stock.symbol}: No price data available'))
+                # Base volatility: 0.5% to 2% per update
+                base_volatility = random.uniform(0.5, 2.0)
+                
+                # Combine market drift, sector trend, and random volatility
+                total_change = market_drift + (sector_trend * 0.3) + random.gauss(0, base_volatility)
+                
+                # Calculate new price
+                new_price = old_price * (1 + total_change / 100)
+                
+                # Apply safety limits
+                # 1. Price bounds: $1 minimum, $50,000 maximum
+                new_price = max(1.0, min(50000.0, new_price))
+                
+                # 2. Max single update change: ±15%
+                max_change = old_price * 0.15
+                if new_price > old_price + max_change:
+                    new_price = old_price + max_change
+                elif new_price < old_price - max_change:
+                    new_price = old_price - max_change
+                
+                # Round to 2 decimal places
+                new_price = round(new_price, 2)
+                
+                # Update stock
+                stock.previous_close = Decimal(str(old_price))
+                stock.current_price = Decimal(str(new_price))
+                stock.last_updated = datetime.now()
+                stock.save()
+                
+                change = new_price - old_price
+                change_pct = (change / old_price) * 100 if old_price > 0 else 0
+                
+                icon = "📈" if change > 0 else "📉" if change < 0 else "➡️"
+                color = self.style.SUCCESS if change > 0 else self.style.ERROR if change < 0 else self.style.WARNING
+                
+                self.stdout.write(
+                    color(f'   {icon} {stock.symbol:6s} ${old_price:8.2f} → ${new_price:8.2f}  {change:+7.2f} ({change_pct:+.2f}%)')
+                )
+                updated += 1
                     
             except Exception as e:
-                failed.append(stock.symbol)
                 self.stdout.write(self.style.ERROR(f'   ❌ {stock.symbol}: {str(e)}'))
         
         # Summary
         self.stdout.write('')
         if updated > 0:
             self.stdout.write(self.style.SUCCESS(f'✅ Successfully updated: {updated}/{len(stocks)} stocks'))
-        if failed:
-            self.stdout.write(self.style.ERROR(f'❌ Failed to update: {len(failed)} stocks ({", ".join(failed[:5])}{"..." if len(failed) > 5 else ""})'))
+            self.stdout.write(self.style.SUCCESS(f'🎲 Mode: Realistic Simulation (Market: {market_sentiment})'))
