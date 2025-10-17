@@ -90,7 +90,7 @@ except admin.sites.NotRegistered:
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
     """Admin interface for controlling stock prices with real API integration"""
-    list_display = ('symbol', 'name', 'sector', 'current_price_display', 'price_change_display', 'is_active', 'last_updated')
+    list_display = ('symbol', 'name', 'sector', 'current_price', 'is_active')
     list_filter = ('is_active', 'sector')
     search_fields = ('symbol', 'name', 'sector')
     ordering = ('symbol',)
