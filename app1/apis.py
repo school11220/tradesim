@@ -273,22 +273,24 @@ def trigger_price_update(request):
 
 def update_prices_real(request):
     """
-    API endpoint to update stock prices from REAL market data via Yahoo Finance
-    Optimized with 3-tier fallback and batch processing
+    MULTI-API STOCK PRICE UPDATER
+    Uses 4 different free APIs for maximum reliability:
+    1. Financial Modeling Prep (no key needed for demo)
+    2. Alpha Vantage (free, 25 calls/day)
+    3. Finnhub (free, 60 calls/minute)
+    4. Yahoo Finance (fallback)
     """
     from app1.models import Stock
     from datetime import datetime
     import logging
+    import os
+    import time
     
     logger = logging.getLogger(__name__)
     
-    try:
-        import yfinance as yf
-    except ImportError:
-        return JsonResponse({
-            'success': False,
-            'error': 'yfinance not installed. Run: pip install yfinance'
-        }, status=500)
+    # Get API keys from environment (optional - will use free APIs if not set)
+    ALPHA_VANTAGE_KEY = os.environ.get('ALPHA_VANTAGE_API_KEY', '')
+    FINNHUB_KEY = os.environ.get('FINNHUB_API_KEY', '')
     
     try:
         stocks = Stock.objects.filter(is_active=True)
@@ -302,113 +304,121 @@ def update_prices_real(request):
         updated_count = 0
         failed = []
         updates = []
-        errors = []
+        api_usage = {}
         
-        logger.info(f"Starting real price update for {stocks.count()} stocks")
+        logger.info(f"Starting multi-API price update for {stocks.count()} stocks")
         
-        # Try batch download first (much faster!)
-        symbols = [stock.symbol for stock in stocks]
-        batch_data = {}
-        
-        try:
-            # Download all tickers at once - MUCH faster than individual calls
-            logger.info(f"Attempting batch download for {len(symbols)} symbols")
-            tickers = yf.Tickers(' '.join(symbols))
+        for stock in stocks:
+            current_price = None
+            api_used = None
             
-            for stock in stocks:
+            # API 1: Financial Modeling Prep (FREE - no key needed for major stocks)
+            if not current_price:
                 try:
-                    ticker = tickers.tickers[stock.symbol]
+                    url = f"https://financialmodelingprep.com/api/v3/quote-short/{stock.symbol}?apikey=demo"
+                    response = requests.get(url, timeout=3)
+                    data = response.json()
+                    
+                    if data and len(data) > 0 and "price" in data[0]:
+                        current_price = float(data[0]["price"])
+                        api_used = "FMP"
+                except Exception as e:
+                    logger.debug(f"FMP failed for {stock.symbol}: {str(e)[:30]}")
+            
+            # API 2: Alpha Vantage (if key provided)
+            if ALPHA_VANTAGE_KEY and not current_price:
+                try:
+                    url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={stock.symbol}&apikey={ALPHA_VANTAGE_KEY}"
+                    response = requests.get(url, timeout=3)
+                    data = response.json()
+                    
+                    if "Global Quote" in data and "05. price" in data["Global Quote"]:
+                        current_price = float(data["Global Quote"]["05. price"])
+                        api_used = "AlphaVantage"
+                except Exception as e:
+                    logger.debug(f"Alpha Vantage failed for {stock.symbol}: {str(e)[:30]}")
+            
+            # API 3: Finnhub (if key provided)
+            if FINNHUB_KEY and not current_price:
+                try:
+                    url = f"https://finnhub.io/api/v1/quote?symbol={stock.symbol}&token={FINNHUB_KEY}"
+                    response = requests.get(url, timeout=3)
+                    data = response.json()
+                    
+                    if "c" in data and data["c"] > 0:
+                        current_price = float(data["c"])
+                        api_used = "Finnhub"
+                except Exception as e:
+                    logger.debug(f"Finnhub failed for {stock.symbol}: {str(e)[:30]}")
+            
+            # API 4: Yahoo Finance (fallback - try yfinance if available)
+            if not current_price:
+                try:
+                    import yfinance as yf
+                    ticker = yf.Ticker(stock.symbol)
                     
                     # Try fast_info first
                     try:
-                        batch_data[stock.symbol] = float(ticker.fast_info.last_price)
-                    except:
-                        # Fallback to history
-                        try:
-                            hist = ticker.history(period="1d")
-                            if not hist.empty:
-                                batch_data[stock.symbol] = float(hist['Close'].iloc[-1])
-                        except:
-                            pass
-                except Exception as e:
-                    logger.warning(f"Batch fetch failed for {stock.symbol}: {str(e)[:50]}")
-        except Exception as e:
-            logger.warning(f"Batch download failed, falling back to individual: {str(e)[:100]}")
-        
-        # Process all stocks
-        for stock in stocks:
-            try:
-                current_price = batch_data.get(stock.symbol)
-                
-                # If batch failed, try individual fetch
-                if not current_price:
-                    ticker = yf.Ticker(stock.symbol)
-                    
-                    # Method 1: fast_info
-                    try:
                         current_price = float(ticker.fast_info.last_price)
-                    except Exception:
-                        # Method 2: history
-                        try:
-                            hist = ticker.history(period="1d")
-                            if not hist.empty:
-                                current_price = float(hist['Close'].iloc[-1])
-                        except Exception:
-                            # Method 3: info dict
-                            try:
-                                info = ticker.info
-                                for field in ['currentPrice', 'regularMarketPrice', 'previousClose']:
-                                    if field in info and info[field]:
-                                        current_price = float(info[field])
-                                        break
-                            except Exception:
-                                pass
+                        api_used = "YahooFinance"
+                    except:
+                        # Try history
+                        hist = ticker.history(period="1d")
+                        if not hist.empty:
+                            current_price = float(hist['Close'].iloc[-1])
+                            api_used = "YahooFinance"
+                except Exception as e:
+                    logger.debug(f"Yahoo failed for {stock.symbol}: {str(e)[:30]}")
+            
+            # Update stock if we got a price
+            if current_price and current_price > 0:
+                old_price = float(stock.current_price)
+                stock.previous_close = old_price
+                stock.current_price = round(current_price, 2)
+                stock.last_updated = datetime.now()
+                stock.save()
                 
-                if current_price and current_price > 0:
-                    old_price = float(stock.current_price)
-                    stock.previous_close = old_price
-                    stock.current_price = round(current_price, 2)
-                    stock.last_updated = datetime.now()
-                    stock.save()
-                    
-                    change = current_price - old_price
-                    change_pct = (change / old_price) * 100 if old_price > 0 else 0
-                    
-                    updates.append({
-                        'symbol': stock.symbol,
-                        'old_price': round(old_price, 2),
-                        'new_price': round(current_price, 2),
-                        'change': round(change, 2),
-                        'change_percent': round(change_pct, 2)
-                    })
-                    updated_count += 1
-                else:
-                    failed.append(stock.symbol)
-                    logger.warning(f"No valid price data for {stock.symbol}")
-            except Exception as e:
+                # Track API usage
+                api_usage[api_used] = api_usage.get(api_used, 0) + 1
+                
+                change = current_price - old_price
+                change_pct = (change / old_price) * 100 if old_price > 0 else 0
+                
+                updates.append({
+                    'symbol': stock.symbol,
+                    'old_price': round(old_price, 2),
+                    'new_price': round(current_price, 2),
+                    'change': round(change, 2),
+                    'change_percent': round(change_pct, 2),
+                    'api': api_used
+                })
+                updated_count += 1
+            else:
                 failed.append(stock.symbol)
-                error_msg = f"{stock.symbol}: {str(e)[:100]}"
-                errors.append(error_msg)
-                logger.error(f"Error fetching {stock.symbol}: {str(e)}")
+                logger.warning(f"All APIs failed for {stock.symbol}")
+            
+            # Small delay to avoid overwhelming APIs
+            time.sleep(0.05)
         
         success_rate = (updated_count / len(stocks) * 100) if stocks else 0
-        logger.info(f"Price update complete: {updated_count}/{len(stocks)} stocks ({success_rate:.1f}%)")
+        logger.info(f"Update complete: {updated_count}/{len(stocks)} ({success_rate:.1f}%)")
         
         return JsonResponse({
             'success': True,
-            'mode': 'real_market',
+            'mode': 'real_market_multi_api',
             'updated_count': updated_count,
             'total_stocks': len(stocks),
             'success_rate': round(success_rate, 1),
             'failed_count': len(failed),
-            'failed': failed[:20] if len(failed) > 20 else failed,  # Limit to first 20
-            'errors': errors[:5] if len(errors) > 5 else errors,  # Limit to first 5 errors
+            'failed': failed[:10],
+            'api_usage': api_usage,
             'timestamp': datetime.now().isoformat(),
-            'updates': updates[:10] if len(updates) > 10 else updates  # Sample of updates
+            'updates': updates[:15],
+            'message': f'Successfully updated {updated_count} stocks using {len(api_usage)} APIs'
         })
         
     except Exception as e:
-        logger.error(f"Fatal error in update_prices_real: {str(e)}")
+        logger.error(f"Fatal error: {str(e)}")
         return JsonResponse({
             'success': False,
             'error': str(e)
