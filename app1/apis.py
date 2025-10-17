@@ -274,9 +274,13 @@ def trigger_price_update(request):
 def update_prices_real(request):
     """
     API endpoint to update stock prices from REAL market data via Yahoo Finance
+    Optimized with 3-tier fallback and batch processing
     """
     from app1.models import Stock
     from datetime import datetime
+    import logging
+    
+    logger = logging.getLogger(__name__)
     
     try:
         import yfinance as yf
@@ -298,6 +302,9 @@ def update_prices_real(request):
         updated_count = 0
         failed = []
         updates = []
+        errors = []
+        
+        logger.info(f"Starting real price update for {stocks.count()} stocks")
         
         for stock in stocks:
             try:
@@ -345,19 +352,31 @@ def update_prices_real(request):
                     updated_count += 1
                 else:
                     failed.append(stock.symbol)
+                    logger.warning(f"No valid price data for {stock.symbol}")
             except Exception as e:
                 failed.append(stock.symbol)
+                error_msg = f"{stock.symbol}: {str(e)[:100]}"
+                errors.append(error_msg)
+                logger.error(f"Error fetching {stock.symbol}: {str(e)}")
+        
+        success_rate = (updated_count / len(stocks) * 100) if stocks else 0
+        logger.info(f"Price update complete: {updated_count}/{len(stocks)} stocks ({success_rate:.1f}%)")
         
         return JsonResponse({
             'success': True,
             'mode': 'real_market',
             'updated_count': updated_count,
             'total_stocks': len(stocks),
-            'failed': failed,
-            'updates': updates
+            'success_rate': round(success_rate, 1),
+            'failed_count': len(failed),
+            'failed': failed[:20] if len(failed) > 20 else failed,  # Limit to first 20
+            'errors': errors[:5] if len(errors) > 5 else errors,  # Limit to first 5 errors
+            'timestamp': datetime.now().isoformat(),
+            'updates': updates[:10] if len(updates) > 10 else updates  # Sample of updates
         })
         
     except Exception as e:
+        logger.error(f"Fatal error in update_prices_real: {str(e)}")
         return JsonResponse({
             'success': False,
             'error': str(e)
