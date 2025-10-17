@@ -81,33 +81,13 @@ class CustomUserAdmin(UserAdmin):
     add_bonus_5000.short_description = "Add $5,000 bonus"
 
 
-# Unregister Stock if already registered (in case of conflicts)
-try:
-    admin.site.unregister(Stock)
-except admin.sites.NotRegistered:
-    pass
-
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
     """Admin interface for controlling stock prices with real API integration"""
     list_display = ('symbol', 'name', 'sector', 'current_price', 'is_active')
-    list_filter = ('is_active', 'sector')
-    search_fields = ('symbol', 'name', 'sector')
+    list_filter = ('is_active',)
+    search_fields = ('symbol', 'name')
     ordering = ('symbol',)
-    
-    fieldsets = (
-        ('Stock Information', {
-            'fields': ('symbol', 'name', 'sector', 'is_active')
-        }),
-        ('Price Control', {
-            'fields': ('current_price', 'previous_close'),
-            'description': 'Set stock prices directly here or use actions to update from real market data.'
-        }),
-        ('Timestamps', {
-            'fields': ('last_updated', 'created_at'),
-            'classes': ('collapse',)
-        }),
-    )
     
     readonly_fields = ('last_updated', 'created_at')
     
