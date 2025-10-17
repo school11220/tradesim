@@ -83,7 +83,7 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
-    """Admin interface for controlling stock prices with real API integration"""
+    """Admin interface for controlling stock prices with simulation"""
     list_display = ('symbol', 'name', 'sector', 'current_price', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('symbol', 'name')
@@ -92,7 +92,6 @@ class StockAdmin(admin.ModelAdmin):
     readonly_fields = ('last_updated', 'created_at')
     
     actions = [
-        'fetch_real_prices',
         'apply_custom_percentage',
         'sector_increase_5',
         'sector_decrease_5',
@@ -121,67 +120,6 @@ class StockAdmin(admin.ModelAdmin):
             )
         return format_html('<span style="color: gray;">—</span>')
     price_change_display.short_description = 'Change'
-    
-    def fetch_real_prices(self, request, queryset):
-        """Fetch real prices from Yahoo Finance for selected stocks"""
-        try:
-            import yfinance as yf
-            updated = 0
-            failed = []
-            errors = []
-            
-            for stock in queryset:
-                try:
-                    ticker = yf.Ticker(stock.symbol)
-                    
-                    # Method 1: Try fast_info first (fastest and most reliable)
-                    current_price = None
-                    try:
-                        fast_info = ticker.fast_info
-                        current_price = float(fast_info.last_price)
-                        prev_close = float(fast_info.previous_close)
-                    except Exception as e1:
-                        # Method 2: Fallback to history (very reliable)
-                        try:
-                            hist = ticker.history(period="1d")
-                            if not hist.empty:
-                                current_price = float(hist['Close'].iloc[-1])
-                                prev_close = stock.current_price  # Keep current as previous
-                        except Exception as e2:
-                            # Method 3: Last resort - try info
-                            try:
-                                info = ticker.info
-                                for field in ['currentPrice', 'regularMarketPrice', 'previousClose']:
-                                    if field in info and info[field]:
-                                        current_price = float(info[field])
-                                        prev_close = stock.current_price
-                                        break
-                            except Exception as e3:
-                                errors.append(f"{stock.symbol}: {str(e3)[:50]}")
-                                failed.append(stock.symbol)
-                                continue
-                    
-                    if current_price and current_price > 0:
-                        stock.previous_close = stock.current_price
-                        stock.current_price = round(current_price, 2)
-                        stock.save()
-                        updated += 1
-                    else:
-                        failed.append(stock.symbol)
-                except Exception as e:
-                    errors.append(f"{stock.symbol}: {str(e)[:50]}")
-                    failed.append(stock.symbol)
-            
-            if updated > 0:
-                self.message_user(request, f'✅ Updated {updated} stock(s) with real market prices!')
-            if failed:
-                self.message_user(request, f'⚠️ Failed to fetch ({len(failed)}): {", ".join(failed[:10])}{"..." if len(failed) > 10 else ""}', level='warning')
-            if errors and len(errors) <= 5:
-                for err in errors[:5]:
-                    self.message_user(request, f'Error: {err}', level='error')
-        except ImportError:
-            self.message_user(request, '❌ yfinance not installed. Run: pip install yfinance', level='error')
-    fetch_real_prices.short_description = "📈 Fetch REAL market prices (Yahoo Finance)"
     
     def apply_custom_percentage(self, request, queryset):
         """Apply custom percentage change to selected stocks"""
@@ -325,21 +263,22 @@ class StockAdmin(admin.ModelAdmin):
         return custom_urls + urls
     
     def force_update_prices_view(self, request):
-        """Force immediate price update from Yahoo Finance"""
+        """Force immediate price simulation update"""
         from django.http import JsonResponse
         import requests
         
         try:
-            # Call the API endpoint directly
+            # Call the simulation endpoint directly
             response = requests.get(f"{request.scheme}://{request.get_host()}/api/update-prices-real", timeout=60)
             data = response.json()
             
             if data.get('success'):
-                self.message_user(request, f"✅ Updated {data.get('updated_count', 0)} of {data.get('total_stocks', 0)} stocks!")
+                sentiment = data.get('market_sentiment', 'unknown')
+                self.message_user(request, f"✅ Simulated {data.get('updated_count', 0)} of {data.get('total_stocks', 0)} stocks! (Market: {sentiment})")
             else:
-                self.message_user(request, f"❌ Update failed: {data.get('error', 'Unknown error')}", level='error')
+                self.message_user(request, f"❌ Simulation failed: {data.get('error', 'Unknown error')}", level='error')
         except Exception as e:
-            self.message_user(request, f"❌ Update failed: {str(e)}", level='error')
+            self.message_user(request, f"❌ Simulation failed: {str(e)}", level='error')
         
         return redirect('admin:app1_stock_changelist')
     
@@ -618,7 +557,7 @@ class TeamAdmin(admin.ModelAdmin):
 
 
 # MarketEventAdmin temporarily disabled - will be added after migrations run
-# See STOCK_API_GUIDE.md for full instructions
+# See PRICE_SIMULATION_GUIDE.md for configuration details
 
 
 # Customize admin site headers

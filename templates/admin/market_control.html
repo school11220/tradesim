@@ -14,7 +14,7 @@
                 <label style="display: block; margin-bottom: 10px; font-size: 14px;">Current Mode:</label>
                 <div id="current-mode" style="font-size: 24px; font-weight: bold;">
                     {% if use_real_prices %}
-                        📈 REAL MARKET DATA
+                        🎲 REALISTIC SIMULATION
                     {% else %}
                         🎲 SIMULATED PRICES
                     {% endif %}
@@ -28,21 +28,21 @@
         </div>
         
         <div style="font-size: 14px; opacity: 0.9; margin-top: 20px;">
-            <strong>Real Market:</strong> Prices from Yahoo Finance (live stock data)<br>
-            <strong>Simulated:</strong> Random price fluctuations (±2% volatility)
+            <strong>Realistic Simulation:</strong> Market sentiment with sector correlations (0.5-2% volatility)<br>
+            <strong>Simple Simulation:</strong> Random price fluctuations (±2% volatility)
         </div>
     </div>
     
     <!-- Quick Actions Grid -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
-        <!-- Fetch Real Prices -->
+        <!-- Simulate Price Update -->
         <div style="background: #10b981; color: white; padding: 30px; border-radius: 10px; text-align: center;">
-            <h3 style="color: white; margin-bottom: 15px;">📈 Real Market Update</h3>
+            <h3 style="color: white; margin-bottom: 15px;">🎲 Simulation Update</h3>
             <button onclick="fetchRealPrices()" 
                     style="padding: 15px 40px; background: white; color: #10b981; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
-                Fetch Live Prices Now
+                Run Simulation Now
             </button>
-            <p style="margin-top: 10px; font-size: 12px; opacity: 0.9;">Updates from Yahoo Finance</p>
+            <p style="margin-top: 10px; font-size: 12px; opacity: 0.9;">Updates with market simulation</p>
         </div>
         
         <!-- Simulated Update -->
@@ -175,12 +175,13 @@ function toggleMode() {
 }
 
 function fetchRealPrices() {
-    showStatus('Fetching live prices from Yahoo Finance...', 'info');
+    showStatus('Running realistic market simulation...', 'info');
     fetch('/api/update-prices-real', { method: 'POST', headers: {'X-CSRFToken': csrftoken} })
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                showStatus(`✅ Updated ${data.updated_count} stocks with real market data!`, 'success');
+                const sentiment = data.market_sentiment || 'unknown';
+                showStatus(`✅ Simulated ${data.updated_count} stocks (Market: ${sentiment})!`, 'success');
             } else {
                 showStatus('❌ Error: ' + data.error, 'error');
             }
