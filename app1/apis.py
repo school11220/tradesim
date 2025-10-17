@@ -306,31 +306,63 @@ def update_prices_real(request):
         
         logger.info(f"Starting real price update for {stocks.count()} stocks")
         
+        # Try batch download first (much faster!)
+        symbols = [stock.symbol for stock in stocks]
+        batch_data = {}
+        
+        try:
+            # Download all tickers at once - MUCH faster than individual calls
+            logger.info(f"Attempting batch download for {len(symbols)} symbols")
+            tickers = yf.Tickers(' '.join(symbols))
+            
+            for stock in stocks:
+                try:
+                    ticker = tickers.tickers[stock.symbol]
+                    
+                    # Try fast_info first
+                    try:
+                        batch_data[stock.symbol] = float(ticker.fast_info.last_price)
+                    except:
+                        # Fallback to history
+                        try:
+                            hist = ticker.history(period="1d")
+                            if not hist.empty:
+                                batch_data[stock.symbol] = float(hist['Close'].iloc[-1])
+                        except:
+                            pass
+                except Exception as e:
+                    logger.warning(f"Batch fetch failed for {stock.symbol}: {str(e)[:50]}")
+        except Exception as e:
+            logger.warning(f"Batch download failed, falling back to individual: {str(e)[:100]}")
+        
+        # Process all stocks
         for stock in stocks:
             try:
-                ticker = yf.Ticker(stock.symbol)
+                current_price = batch_data.get(stock.symbol)
                 
-                # Method 1: Try fast_info first (fastest and most reliable)
-                current_price = None
-                try:
-                    fast_info = ticker.fast_info
-                    current_price = float(fast_info.last_price)
-                except Exception:
-                    # Method 2: Fallback to history (very reliable)
+                # If batch failed, try individual fetch
+                if not current_price:
+                    ticker = yf.Ticker(stock.symbol)
+                    
+                    # Method 1: fast_info
                     try:
-                        hist = ticker.history(period="1d")
-                        if not hist.empty:
-                            current_price = float(hist['Close'].iloc[-1])
+                        current_price = float(ticker.fast_info.last_price)
                     except Exception:
-                        # Method 3: Last resort - try info
+                        # Method 2: history
                         try:
-                            info = ticker.info
-                            for field in ['currentPrice', 'regularMarketPrice', 'previousClose']:
-                                if field in info and info[field]:
-                                    current_price = float(info[field])
-                                    break
+                            hist = ticker.history(period="1d")
+                            if not hist.empty:
+                                current_price = float(hist['Close'].iloc[-1])
                         except Exception:
-                            pass
+                            # Method 3: info dict
+                            try:
+                                info = ticker.info
+                                for field in ['currentPrice', 'regularMarketPrice', 'previousClose']:
+                                    if field in info and info[field]:
+                                        current_price = float(info[field])
+                                        break
+                            except Exception:
+                                pass
                 
                 if current_price and current_price > 0:
                     old_price = float(stock.current_price)

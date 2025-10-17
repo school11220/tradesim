@@ -6,7 +6,7 @@
   "crons": [
     {
       "path": "/api/update-prices-real",
-      "schedule": "*/5 9-21 * * 1-5"
+      "schedule": "* 9-21 * * 1-5"
     }
   ]
 }

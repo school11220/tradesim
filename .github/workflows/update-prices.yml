@@ -2,10 +2,10 @@ name: Update Stock Prices with Real Market Data
 
 on:
   schedule:
-    # Run every 5 minutes during market hours and extended hours
+    # Run every 1 minute during market hours for real-time updates
     # Covers: Pre-market (9 AM UTC = 5 AM ET), Regular hours, After-hours
     # Monday-Friday only (trading days)
-    - cron: '*/5 9-21 * * 1-5'
+    - cron: '* 9-21 * * 1-5'
   workflow_dispatch: # Allow manual trigger from GitHub Actions tab
 
 jobs:

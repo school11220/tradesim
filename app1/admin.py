@@ -187,13 +187,21 @@ class StockAdmin(admin.ModelAdmin):
         """Apply custom percentage change to selected stocks"""
         if 'apply' in request.POST:
             try:
+                from django.db import transaction
+                
                 percentage = float(request.POST.get('percentage', 0))
                 multiplier = 1 + (percentage / 100)
                 
-                for stock in queryset:
-                    stock.previous_close = float(stock.current_price)
-                    stock.current_price = round(float(stock.current_price) * multiplier, 2)
-                    stock.save()
+                updated_stocks = []
+                with transaction.atomic():
+                    for stock in queryset:
+                        stock.previous_close = float(stock.current_price)
+                        stock.current_price = round(float(stock.current_price) * multiplier, 2)
+                        updated_stocks.append(stock)
+                    
+                    # Bulk update for better performance
+                    if updated_stocks:
+                        Stock.objects.bulk_update(updated_stocks, ['previous_close', 'current_price'])
                 
                 self.message_user(request, f'✅ Applied {percentage:+.2f}% change to {queryset.count()} stock(s)')
                 return redirect('admin:app1_stock_changelist')
@@ -209,60 +217,100 @@ class StockAdmin(admin.ModelAdmin):
     
     def sector_increase_5(self, request, queryset):
         """Increase ALL stocks in selected sectors by 5%"""
+        from django.db import transaction
+        
         sectors = queryset.values_list('sector', flat=True).distinct()
         count = 0
-        for sector in sectors:
-            stocks = Stock.objects.filter(sector=sector, is_active=True)
-            for stock in stocks:
-                stock.previous_close = float(stock.current_price)
-                stock.current_price = round(float(stock.current_price) * 1.05, 2)
-                stock.save()
-                count += 1
+        updated_stocks = []
+        
+        with transaction.atomic():
+            for sector in sectors:
+                stocks = Stock.objects.filter(sector=sector, is_active=True)
+                for stock in stocks:
+                    stock.previous_close = float(stock.current_price)
+                    stock.current_price = round(float(stock.current_price) * 1.05, 2)
+                    updated_stocks.append(stock)
+                    count += 1
+            
+            # Bulk update for better performance
+            if updated_stocks:
+                Stock.objects.bulk_update(updated_stocks, ['previous_close', 'current_price'])
+        
         self.message_user(request, f'✅ Increased {count} stocks in {len(sectors)} sector(s) by +5%: {", ".join(sectors)}')
     # FIX: Escaped '%' to '%%'
     sector_increase_5.short_description = "📊 Sector Rally +5%%"
     
     def sector_decrease_5(self, request, queryset):
         """Decrease ALL stocks in selected sectors by 5%"""
+        from django.db import transaction
+        
         sectors = queryset.values_list('sector', flat=True).distinct()
         count = 0
-        for sector in sectors:
-            stocks = Stock.objects.filter(sector=sector, is_active=True)
-            for stock in stocks:
-                stock.previous_close = float(stock.current_price)
-                stock.current_price = round(float(stock.current_price) * 0.95, 2)
-                stock.save()
-                count += 1
+        updated_stocks = []
+        
+        with transaction.atomic():
+            for sector in sectors:
+                stocks = Stock.objects.filter(sector=sector, is_active=True)
+                for stock in stocks:
+                    stock.previous_close = float(stock.current_price)
+                    stock.current_price = round(float(stock.current_price) * 0.95, 2)
+                    updated_stocks.append(stock)
+                    count += 1
+            
+            # Bulk update for better performance
+            if updated_stocks:
+                Stock.objects.bulk_update(updated_stocks, ['previous_close', 'current_price'])
+        
         self.message_user(request, f'✅ Decreased {count} stocks in {len(sectors)} sector(s) by -5%: {", ".join(sectors)}')
     # FIX: Escaped '%' to '%%'
     sector_decrease_5.short_description = "📉 Sector Crash -5%%"
     
     def sector_increase_10(self, request, queryset):
         """Increase ALL stocks in selected sectors by 10%"""
+        from django.db import transaction
+        
         sectors = queryset.values_list('sector', flat=True).distinct()
         count = 0
-        for sector in sectors:
-            stocks = Stock.objects.filter(sector=sector, is_active=True)
-            for stock in stocks:
-                stock.previous_close = float(stock.current_price)
-                stock.current_price = round(float(stock.current_price) * 1.10, 2)
-                stock.save()
-                count += 1
+        updated_stocks = []
+        
+        with transaction.atomic():
+            for sector in sectors:
+                stocks = Stock.objects.filter(sector=sector, is_active=True)
+                for stock in stocks:
+                    stock.previous_close = float(stock.current_price)
+                    stock.current_price = round(float(stock.current_price) * 1.10, 2)
+                    updated_stocks.append(stock)
+                    count += 1
+            
+            # Bulk update for better performance
+            if updated_stocks:
+                Stock.objects.bulk_update(updated_stocks, ['previous_close', 'current_price'])
+        
         self.message_user(request, f'✅ Increased {count} stocks in {len(sectors)} sector(s) by +10%: {", ".join(sectors)}')
     # FIX: Escaped '%' to '%%'
     sector_increase_10.short_description = "🚀 Major Sector Rally +10%%"
     
     def sector_decrease_10(self, request, queryset):
         """Decrease ALL stocks in selected sectors by 10%"""
+        from django.db import transaction
+        
         sectors = queryset.values_list('sector', flat=True).distinct()
         count = 0
-        for sector in sectors:
-            stocks = Stock.objects.filter(sector=sector, is_active=True)
-            for stock in stocks:
-                stock.previous_close = float(stock.current_price)
-                stock.current_price = round(float(stock.current_price) * 0.90, 2)
-                stock.save()
-                count += 1
+        updated_stocks = []
+        
+        with transaction.atomic():
+            for sector in sectors:
+                stocks = Stock.objects.filter(sector=sector, is_active=True)
+                for stock in stocks:
+                    stock.previous_close = float(stock.current_price)
+                    stock.current_price = round(float(stock.current_price) * 0.90, 2)
+                    updated_stocks.append(stock)
+                    count += 1
+            
+            # Bulk update for better performance
+            if updated_stocks:
+                Stock.objects.bulk_update(updated_stocks, ['previous_close', 'current_price'])
+        
         self.message_user(request, f'✅ Decreased {count} stocks in {len(sectors)} sector(s) by -10%: {", ".join(sectors)}')
     # FIX: Escaped '%' to '%%'
     sector_decrease_10.short_description = "💥 Major Sector Crash -10%%"
@@ -272,8 +320,28 @@ class StockAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         custom_urls = [
             path('market-control/', self.admin_site.admin_view(self.market_control_view), name='stock_market_control'),
+            path('force-update-prices/', self.admin_site.admin_view(self.force_update_prices_view), name='stock_force_update'),
         ]
         return custom_urls + urls
+    
+    def force_update_prices_view(self, request):
+        """Force immediate price update from Yahoo Finance"""
+        from django.http import JsonResponse
+        import requests
+        
+        try:
+            # Call the API endpoint directly
+            response = requests.get(f"{request.scheme}://{request.get_host()}/api/update-prices-real", timeout=60)
+            data = response.json()
+            
+            if data.get('success'):
+                self.message_user(request, f"✅ Updated {data.get('updated_count', 0)} of {data.get('total_stocks', 0)} stocks!")
+            else:
+                self.message_user(request, f"❌ Update failed: {data.get('error', 'Unknown error')}", level='error')
+        except Exception as e:
+            self.message_user(request, f"❌ Update failed: {str(e)}", level='error')
+        
+        return redirect('admin:app1_stock_changelist')
     
     def market_control_view(self, request):
         """Market control panel view"""

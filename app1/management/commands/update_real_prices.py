@@ -76,18 +76,46 @@ class Command(BaseCommand):
         
         updated = 0
         failed = []
+        batch_data = {}
         
-        # Fetch data for each symbol
+        # Try batch download first (MUCH faster!)
+        try:
+            self.stdout.write(self.style.SUCCESS('🚀 Attempting batch download...'))
+            tickers = yf.Tickers(' '.join(symbols))
+            
+            for stock in stocks:
+                try:
+                    ticker = tickers.tickers[stock.symbol]
+                    try:
+                        batch_data[stock.symbol] = float(ticker.fast_info.last_price)
+                    except:
+                        try:
+                            hist = ticker.history(period="1d")
+                            if not hist.empty:
+                                batch_data[stock.symbol] = float(hist['Close'].iloc[-1])
+                        except:
+                            pass
+                except Exception:
+                    pass
+            
+            self.stdout.write(self.style.SUCCESS(f'✓ Batch fetched {len(batch_data)} prices'))
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f'⚠️  Batch download failed: {str(e)[:50]}'))
+        
+        # Process all stocks
         for stock in stocks:
             try:
-                ticker = yf.Ticker(stock.symbol)
+                current_price = batch_data.get(stock.symbol)
                 
-                # Method 1: Try fast_info first (fastest and most reliable)
-                current_price = None
-                try:
-                    fast_info = ticker.fast_info
-                    current_price = float(fast_info.last_price)
-                except Exception:
+                # If batch failed, try individual fetch
+                if not current_price:
+                    ticker = yf.Ticker(stock.symbol)
+                    
+                    # Method 1: Try fast_info first (fastest and most reliable)
+                    try:
+                        fast_info = ticker.fast_info
+                        current_price = float(fast_info.last_price)
+                    except Exception:
                     # Method 2: Fallback to history (very reliable)
                     try:
                         hist = ticker.history(period="1d")
