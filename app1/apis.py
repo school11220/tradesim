@@ -467,11 +467,21 @@ def get_market_events(request):
     API endpoint to get recent market events for teams
     Returns active events from the last 24 hours
     """
-    from app1.models import MarketEvent
     from django.utils import timezone
     from datetime import timedelta
     
     try:
+        # Try to import MarketEvent (may not exist until migrations run)
+        try:
+            from app1.models import MarketEvent
+        except ImportError:
+            return JsonResponse({
+                'success': True,
+                'events': [],
+                'count': 0,
+                'message': 'MarketEvent feature not yet available. Run migrations.'
+            })
+        
         # Get events from last 24 hours
         cutoff_time = timezone.now() - timedelta(hours=24)
         
