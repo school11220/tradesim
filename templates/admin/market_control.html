@@ -55,14 +55,13 @@
             <p style="margin-top: 10px; font-size: 12px; opacity: 0.9;">±2% random changes</p>
         </div>
         
-        <!-- Create Market Event -->
-        <div style="background: #8b5cf6; color: white; padding: 30px; border-radius: 10px; text-align: center;">
-            <h3 style="color: white; margin-bottom: 15px;">📰 Create Event</h3>
-            <a href="{% url 'admin:app1_marketevent_add' %}"
-                    style="display: inline-block; padding: 15px 40px; background: white; color: #8b5cf6; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; text-decoration: none;">
-                New Market Event
-            </a>
-            <p style="margin-top: 10px; font-size: 12px; opacity: 0.9;">News + Price Impact</p>
+        <!-- Market Events Disabled Temporarily -->
+        <div style="background: #6b7280; color: white; padding: 30px; border-radius: 10px; text-align: center; opacity: 0.6;">
+            <h3 style="color: white; margin-bottom: 15px;">📰 Market Events</h3>
+            <div style="display: inline-block; padding: 15px 40px; background: #374151; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                Coming Soon
+            </div>
+            <p style="margin-top: 10px; font-size: 12px; opacity: 0.9;">Feature temporarily disabled</p>
         </div>
     </div>
     
@@ -115,9 +114,9 @@
         <a href="{% url 'admin:app1_stock_changelist' %}" style="color: #2563eb; text-decoration: none; font-weight: bold; padding: 10px 20px; background: #eff6ff; border-radius: 8px;">
             📊 Manage Stocks
         </a>
-        <a href="{% url 'admin:app1_marketevent_changelist' %}" style="color: #2563eb; text-decoration: none; font-weight: bold; padding: 10px 20px; background: #eff6ff; border-radius: 8px;">
-            📰 Market Events
-        </a>
+        <span style="color: #6b7280; text-decoration: none; font-weight: bold; padding: 10px 20px; background: #f3f4f6; border-radius: 8px; opacity: 0.6; cursor: not-allowed;">
+            📰 Market Events (Coming Soon)
+        </span>
         <a href="{% url 'admin:index' %}" style="color: #2563eb; text-decoration: none; font-weight: bold; padding: 10px 20px; background: #eff6ff; border-radius: 8px;">
             ← Back to Admin
         </a>
