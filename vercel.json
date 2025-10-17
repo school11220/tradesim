@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "find . -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true",
   "rewrites": [
     { "source": "/(.*)", "destination": "/api/wsgi" }
   ],
@@ -7,6 +8,17 @@
     {
       "path": "/api/update-prices-real",
       "schedule": "* 9-21 * * 1-5"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
     }
   ]
 }
