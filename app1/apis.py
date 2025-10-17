@@ -302,19 +302,33 @@ def update_prices_real(request):
         for stock in stocks:
             try:
                 ticker = yf.Ticker(stock.symbol)
-                info = ticker.info
                 
-                # Try to get current price from different fields
+                # Method 1: Try fast_info first (fastest and most reliable)
                 current_price = None
-                for field in ['regularMarketPrice', 'currentPrice', 'price', 'previousClose']:
-                    if field in info and info[field]:
-                        current_price = float(info[field])
-                        break
+                try:
+                    fast_info = ticker.fast_info
+                    current_price = float(fast_info.last_price)
+                except Exception:
+                    # Method 2: Fallback to history (very reliable)
+                    try:
+                        hist = ticker.history(period="1d")
+                        if not hist.empty:
+                            current_price = float(hist['Close'].iloc[-1])
+                    except Exception:
+                        # Method 3: Last resort - try info
+                        try:
+                            info = ticker.info
+                            for field in ['currentPrice', 'regularMarketPrice', 'previousClose']:
+                                if field in info and info[field]:
+                                    current_price = float(info[field])
+                                    break
+                        except Exception:
+                            pass
                 
                 if current_price and current_price > 0:
                     old_price = float(stock.current_price)
                     stock.previous_close = old_price
-                    stock.current_price = current_price
+                    stock.current_price = round(current_price, 2)
                     stock.last_updated = datetime.now()
                     stock.save()
                     

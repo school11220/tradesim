@@ -128,32 +128,57 @@ class StockAdmin(admin.ModelAdmin):
             import yfinance as yf
             updated = 0
             failed = []
+            errors = []
             
             for stock in queryset:
                 try:
                     ticker = yf.Ticker(stock.symbol)
-                    info = ticker.info
                     
+                    # Method 1: Try fast_info first (fastest and most reliable)
                     current_price = None
-                    for field in ['regularMarketPrice', 'currentPrice', 'price', 'previousClose']:
-                        if field in info and info[field]:
-                            current_price = float(info[field])
-                            break
+                    try:
+                        fast_info = ticker.fast_info
+                        current_price = float(fast_info.last_price)
+                        prev_close = float(fast_info.previous_close)
+                    except Exception as e1:
+                        # Method 2: Fallback to history (very reliable)
+                        try:
+                            hist = ticker.history(period="1d")
+                            if not hist.empty:
+                                current_price = float(hist['Close'].iloc[-1])
+                                prev_close = stock.current_price  # Keep current as previous
+                        except Exception as e2:
+                            # Method 3: Last resort - try info
+                            try:
+                                info = ticker.info
+                                for field in ['currentPrice', 'regularMarketPrice', 'previousClose']:
+                                    if field in info and info[field]:
+                                        current_price = float(info[field])
+                                        prev_close = stock.current_price
+                                        break
+                            except Exception as e3:
+                                errors.append(f"{stock.symbol}: {str(e3)[:50]}")
+                                failed.append(stock.symbol)
+                                continue
                     
                     if current_price and current_price > 0:
                         stock.previous_close = stock.current_price
-                        stock.current_price = current_price
+                        stock.current_price = round(current_price, 2)
                         stock.save()
                         updated += 1
                     else:
                         failed.append(stock.symbol)
-                except Exception:
+                except Exception as e:
+                    errors.append(f"{stock.symbol}: {str(e)[:50]}")
                     failed.append(stock.symbol)
             
             if updated > 0:
                 self.message_user(request, f'✅ Updated {updated} stock(s) with real market prices!')
             if failed:
-                self.message_user(request, f'⚠️ Failed to fetch: {", ".join(failed)}', level='warning')
+                self.message_user(request, f'⚠️ Failed to fetch ({len(failed)}): {", ".join(failed[:10])}{"..." if len(failed) > 10 else ""}', level='warning')
+            if errors and len(errors) <= 5:
+                for err in errors[:5]:
+                    self.message_user(request, f'Error: {err}', level='error')
         except ImportError:
             self.message_user(request, '❌ yfinance not installed. Run: pip install yfinance', level='error')
     fetch_real_prices.short_description = "📈 Fetch REAL market prices (Yahoo Finance)"
