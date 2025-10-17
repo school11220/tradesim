@@ -1,0 +1,166 @@
+{% load static %}
+<div class="market-events-feed" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="color: white; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <span>📰</span> Market News & Events
+        </h3>
+        <button onclick="refreshMarketEvents()" style="background: white; color: #1e40af; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px;">
+            🔄 Refresh
+        </button>
+    </div>
+    
+    <div id="market-events-container" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 15px; max-height: 300px; overflow-y: auto;">
+        <div id="events-loading" style="text-align: center; padding: 20px;">
+            <div class="loading-spinner" style="border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+            <p style="margin-top: 10px;">Loading market events...</p>
+        </div>
+        
+        <div id="events-list" style="display: none;">
+            <!-- Events will be loaded here via JS -->
+        </div>
+        
+        <div id="events-empty" style="display: none; text-align: center; padding: 20px; opacity: 0.8;">
+            <p>📊 No market events at this time</p>
+            <p style="font-size: 14px;">Market is operating under normal conditions</p>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.market-event-item {
+    background: rgba(255, 255, 255, 0.15);
+    border-left: 4px solid;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    transition: all 0.3s;
+}
+
+.market-event-item:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateX(5px);
+}
+
+.market-event-item.bullish {
+    border-left-color: #10b981;
+}
+
+.market-event-item.bearish {
+    border-left-color: #ef4444;
+}
+
+.event-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.event-description {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 8px;
+}
+
+.event-impact {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    font-size: 13px;
+    flex-wrap: wrap;
+}
+
+.event-impact-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.event-time {
+    opacity: 0.7;
+    font-size: 12px;
+}
+</style>
+
+<script>
+// Load market events on page load
+loadMarketEvents();
+
+function loadMarketEvents() {
+    fetch('/api/market-events')
+        .then(response => response.json())
+        .then(data => {
+            const loading = document.getElementById('events-loading');
+            const list = document.getElementById('events-list');
+            const empty = document.getElementById('events-empty');
+            
+            loading.style.display = 'none';
+            
+            if (data.events && data.events.length > 0) {
+                list.style.display = 'block';
+                empty.style.display = 'none';
+                
+                list.innerHTML = data.events.map(event => {
+                    const impactClass = event.is_positive ? 'bullish' : 'bearish';
+                    const impactIcon = event.is_positive ? '📈' : '📉';
+                    const impactText = event.is_positive ? 'BULLISH' : 'BEARISH';
+                    const impactColor = event.is_positive ? '#10b981' : '#ef4444';
+                    
+                    return `
+                        <div class="market-event-item ${impactClass}">
+                            <div class="event-title">${impactIcon} ${event.title}</div>
+                            <div class="event-description">${event.description}</div>
+                            <div class="event-impact">
+                                <span class="event-impact-badge" style="background-color: ${impactColor}; color: white;">
+                                    ${event.affected_sector || 'All Sectors'}
+                                </span>
+                                <span class="event-impact-badge">
+                                    ${impactText} ${event.percentage > 0 ? '+' : ''}${event.percentage.toFixed(2)}%
+                                </span>
+                                ${event.stocks_affected > 0 ? `
+                                    <span class="event-impact-badge">
+                                        ${event.stocks_affected} stocks affected
+                                    </span>
+                                ` : ''}
+                                <span class="event-time">
+                                    ${new Date(event.triggered_at).toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                list.style.display = 'none';
+                empty.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading market events:', error);
+            const loading = document.getElementById('events-loading');
+            const empty = document.getElementById('events-empty');
+            loading.style.display = 'none';
+            empty.style.display = 'block';
+            empty.innerHTML = '<p>❌ Error loading market events</p>';
+        });
+}
+
+function refreshMarketEvents() {
+    const loading = document.getElementById('events-loading');
+    const list = document.getElementById('events-list');
+    const empty = document.getElementById('events-empty');
+    
+    list.style.display = 'none';
+    empty.style.display = 'none';
+    loading.style.display = 'block';
+    
+    loadMarketEvents();
+}
+
+// Auto-refresh every 30 seconds
+setInterval(loadMarketEvents, 30000);
+</script>

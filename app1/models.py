@@ -227,3 +227,119 @@ class Team(models.Model):
             return ranked_teams.index(self) + 1
         except ValueError:
             return None
+
+
+class MarketEvent(models.Model):
+    """Market events that affect stock prices - combines news and sector movements"""
+    EVENT_TYPES = [
+        ('sector_rally', 'Sector Rally'),
+        ('sector_crash', 'Sector Crash'),
+        ('sector_volatility', 'Sector Volatility'),
+        ('market_news', 'Market News'),
+        ('economic_data', 'Economic Data Release'),
+        ('custom', 'Custom Event'),
+    ]
+    
+    SEVERITY_CHOICES = [
+        ('minor', 'Minor (±2%)'),
+        ('moderate', 'Moderate (±5%)'),
+        ('major', 'Major (±10%)'),
+        ('extreme', 'Extreme (±15%)'),
+        ('custom', 'Custom %'),
+    ]
+    
+    title = models.CharField(max_length=200, help_text="Event headline (e.g., 'Tech Sector Rally on AI Breakthrough')")
+    description = models.TextField(help_text="Detailed description of the event and its market impact")
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPES, default='market_news')
+    
+    # Sector impact
+    affected_sector = models.CharField(max_length=50, blank=True, help_text="Sector affected (Technology, Healthcare, etc.)")
+    severity = models.CharField(max_length=10, choices=SEVERITY_CHOICES, default='moderate')
+    custom_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, 
+                                           help_text="Custom percentage change (e.g., 7.50 for +7.5%)")
+    is_positive = models.BooleanField(default=True, help_text="Is this a positive event (price increase)?")
+    
+    # Timing
+    created_at = models.DateTimeField(auto_now_add=True)
+    triggered_at = models.DateTimeField(null=True, blank=True, help_text="When the event was triggered")
+    scheduled_for = models.DateTimeField(null=True, blank=True, help_text="Schedule event for future time")
+    
+    # Status
+    is_active = models.BooleanField(default=True, help_text="Show this event to teams?")
+    is_triggered = models.BooleanField(default=False, help_text="Has this event been triggered?")
+    
+    # Impact tracking
+    stocks_affected = models.IntegerField(default=0, help_text="Number of stocks affected")
+    total_impact = models.TextField(blank=True, help_text="JSON data of price changes")
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Market Event"
+        verbose_name_plural = "Market Events"
+    
+    def __str__(self):
+        return f"{self.title} ({self.get_severity_display()})"
+    
+    def get_percentage_change(self):
+        """Calculate the percentage change based on severity or custom value"""
+        if self.severity == 'custom' and self.custom_percentage:
+            return float(self.custom_percentage)
+        
+        severity_map = {
+            'minor': 2.0,
+            'moderate': 5.0,
+            'major': 10.0,
+            'extreme': 15.0,
+        }
+        return severity_map.get(self.severity, 5.0)
+    
+    def trigger_event(self):
+        """Apply this event's impact to stock prices"""
+        from django.utils import timezone
+        
+        if self.is_triggered:
+            return {'success': False, 'message': 'Event already triggered'}
+        
+        percentage = self.get_percentage_change()
+        if not self.is_positive:
+            percentage = -percentage
+        
+        # Get affected stocks
+        if self.affected_sector:
+            stocks = Stock.objects.filter(sector=self.affected_sector, is_active=True)
+        else:
+            stocks = Stock.objects.filter(is_active=True)
+        
+        impact_data = []
+        for stock in stocks:
+            old_price = float(stock.current_price)
+            multiplier = 1 + (percentage / 100)
+            new_price = old_price * multiplier
+            
+            stock.previous_close = old_price
+            stock.current_price = round(new_price, 2)
+            stock.save()
+            
+            impact_data.append({
+                'symbol': stock.symbol,
+                'old_price': old_price,
+                'new_price': stock.current_price,
+                'change': stock.current_price - old_price,
+                'change_percent': percentage
+            })
+        
+        # Update event status
+        self.is_triggered = True
+        self.triggered_at = timezone.now()
+        self.stocks_affected = len(impact_data)
+        
+        import json
+        self.total_impact = json.dumps(impact_data)
+        self.save()
+        
+        return {
+            'success': True,
+            'message': f'Event triggered! {len(impact_data)} stocks affected by {percentage:+.2f}%',
+            'stocks_affected': len(impact_data),
+            'impact_data': impact_data
+        }

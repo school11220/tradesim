@@ -578,7 +578,7 @@
                         {% if holding.quantity >= 1 %}<button type="button" class="quick-btn" onclick="setQuantity('sell', 1)">1</button>{% endif %}
                         {% if holding.quantity >= 10 %}<button type="button" class="quick-btn" onclick="setQuantity('sell', 10)">10</button>{% endif %}
                         {% if holding.quantity >= 50 %}<button type="button" class="quick-btn" onclick="setQuantity('sell', 50)">50</button>{% endif %}
-                        <button type="button" class="quick-btn" onclick="setQuantity('sell', { holding.quantity })">All</button>
+                        <button type="button" class="quick-btn" onclick="setQuantity('sell', {{ holding.quantity }})">All</button>
                     </div>
                     {% endif %}
                 </div>

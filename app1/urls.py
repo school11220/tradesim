@@ -6,7 +6,12 @@ from .views import (
     team_stocks, team_trade, team_portfolio, team_stock_prices_api
 )
 
-from .apis import search,watchlist,fetchdetails,graphdata,portfolio,portfoliochart,income,holdings,addtoWatchlist,trigger_price_update
+from .apis import (
+    search, watchlist, fetchdetails, graphdata, portfolio, portfoliochart, 
+    income, holdings, addtoWatchlist, trigger_price_update,
+    update_prices_real, update_prices_auto, toggle_price_mode, adjust_sector,
+    get_market_events
+)
 
 urlpatterns = [
     path('health', health_check, name="health"),
@@ -48,6 +53,13 @@ urlpatterns = [
     path('api/portfolio',portfolio,name="portfolio"),
     path('api/portfoliochart',portfoliochart,name="portfoliochart"),
     path('api/incomecalculate',income,name="income"),
-    path('api/update-prices',trigger_price_update,name="trigger_price_update"),
     path('api/holdings/<str:query>',holdings,name="holdings"),
+    
+    # Stock Price Update APIs
+    path('api/update-prices', trigger_price_update, name="trigger_price_update"),
+    path('api/update-prices-real', update_prices_real, name="update_prices_real"),
+    path('api/update-prices-auto', update_prices_auto, name="update_prices_auto"),
+    path('api/toggle-price-mode', toggle_price_mode, name="toggle_price_mode"),
+    path('api/adjust-sector', adjust_sector, name="adjust_sector"),
+    path('api/market-events', get_market_events, name="get_market_events"),
 ]

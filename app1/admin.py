@@ -1,9 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import users, Stock, SimulatorSettings, Event, Team
+from .models import users, Stock, SimulatorSettings, Event, Team, MarketEvent
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils import timezone
+from django.shortcuts import render, redirect
+from django.urls import path
 
 # Register your models here.
 # ₹
@@ -85,19 +87,19 @@ except admin.sites.NotRegistered:
 
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
-    """Admin interface for controlling stock prices - Clean and Simple"""
-    list_display = ('symbol', 'name', 'current_price', 'is_active')
-    list_filter = ('is_active',)
-    search_fields = ('symbol', 'name')
+    """Admin interface for controlling stock prices with real API integration"""
+    list_display = ('symbol', 'name', 'sector', 'current_price_display', 'price_change_display', 'is_active', 'last_updated')
+    list_filter = ('is_active', 'sector')
+    search_fields = ('symbol', 'name', 'sector')
     ordering = ('symbol',)
     
     fieldsets = (
         ('Stock Information', {
-            'fields': ('symbol', 'name', 'is_active')
+            'fields': ('symbol', 'name', 'sector', 'is_active')
         }),
         ('Price Control', {
             'fields': ('current_price', 'previous_close'),
-            'description': 'Set stock prices directly here. Changes take effect immediately.'
+            'description': 'Set stock prices directly here or use actions to update from real market data.'
         }),
         ('Timestamps', {
             'fields': ('last_updated', 'created_at'),
@@ -107,7 +109,178 @@ class StockAdmin(admin.ModelAdmin):
     
     readonly_fields = ('last_updated', 'created_at')
     
-    # NO ACTIONS - Prices update automatically via GitHub Actions every 2 minutes
+    actions = [
+        'fetch_real_prices',
+        'apply_custom_percentage',
+        'sector_increase_5',
+        'sector_decrease_5',
+        'sector_increase_10',
+        'sector_decrease_10',
+    ]
+    
+    def current_price_display(self, obj):
+        """Display current price formatted"""
+        return format_html('<strong style="color: #1e40af;">${:.2f}</strong>', obj.current_price)
+    current_price_display.short_description = 'Current Price'
+    
+    def price_change_display(self, obj):
+        """Display price change with color"""
+        change = obj.price_change
+        change_pct = obj.price_change_percent
+        if change > 0:
+            return format_html(
+                '<span style="color: green;">▲ +${:.2f} (+{:.2f}%)</span>',
+                change, change_pct
+            )
+        elif change < 0:
+            return format_html(
+                '<span style="color: red;">▼ ${:.2f} ({:.2f}%)</span>',
+                change, change_pct
+            )
+        return format_html('<span style="color: gray;">—</span>')
+    price_change_display.short_description = 'Change'
+    
+    def fetch_real_prices(self, request, queryset):
+        """Fetch real prices from Yahoo Finance for selected stocks"""
+        try:
+            import yfinance as yf
+            updated = 0
+            failed = []
+            
+            for stock in queryset:
+                try:
+                    ticker = yf.Ticker(stock.symbol)
+                    info = ticker.info
+                    
+                    current_price = None
+                    for field in ['regularMarketPrice', 'currentPrice', 'price', 'previousClose']:
+                        if field in info and info[field]:
+                            current_price = float(info[field])
+                            break
+                    
+                    if current_price and current_price > 0:
+                        stock.previous_close = stock.current_price
+                        stock.current_price = current_price
+                        stock.save()
+                        updated += 1
+                    else:
+                        failed.append(stock.symbol)
+                except Exception:
+                    failed.append(stock.symbol)
+            
+            if updated > 0:
+                self.message_user(request, f'✅ Updated {updated} stock(s) with real market prices!')
+            if failed:
+                self.message_user(request, f'⚠️ Failed to fetch: {", ".join(failed)}', level='warning')
+        except ImportError:
+            self.message_user(request, '❌ yfinance not installed. Run: pip install yfinance', level='error')
+    fetch_real_prices.short_description = "📈 Fetch REAL market prices (Yahoo Finance)"
+    
+    def apply_custom_percentage(self, request, queryset):
+        """Apply custom percentage change to selected stocks"""
+        if 'apply' in request.POST:
+            try:
+                percentage = float(request.POST.get('percentage', 0))
+                multiplier = 1 + (percentage / 100)
+                
+                for stock in queryset:
+                    stock.previous_close = stock.current_price
+                    stock.current_price = round(stock.current_price * multiplier, 2)
+                    stock.save()
+                
+                self.message_user(request, f'✅ Applied {percentage:+.2f}% change to {queryset.count()} stock(s)')
+                return redirect('admin:app1_stock_changelist')
+            except ValueError:
+                self.message_user(request, '❌ Invalid percentage value', level='error')
+        
+        return render(request, 'admin/stock_custom_percentage.html', {
+            'stocks': queryset,
+            'title': 'Apply Custom Percentage Change'
+        })
+    apply_custom_percentage.short_description = "⚙️ Apply CUSTOM % change"
+    
+    def sector_increase_5(self, request, queryset):
+        """Increase ALL stocks in selected sectors by 5%"""
+        sectors = queryset.values_list('sector', flat=True).distinct()
+        count = 0
+        for sector in sectors:
+            stocks = Stock.objects.filter(sector=sector, is_active=True)
+            for stock in stocks:
+                stock.previous_close = stock.current_price
+                stock.current_price = round(stock.current_price * 1.05, 2)
+                stock.save()
+                count += 1
+        self.message_user(request, f'✅ Increased {count} stocks in {len(sectors)} sector(s) by +5%: {", ".join(sectors)}')
+    sector_increase_5.short_description = "📊 Sector Rally +5%"
+    
+    def sector_decrease_5(self, request, queryset):
+        """Decrease ALL stocks in selected sectors by 5%"""
+        sectors = queryset.values_list('sector', flat=True).distinct()
+        count = 0
+        for sector in sectors:
+            stocks = Stock.objects.filter(sector=sector, is_active=True)
+            for stock in stocks:
+                stock.previous_close = stock.current_price
+                stock.current_price = round(stock.current_price * 0.95, 2)
+                stock.save()
+                count += 1
+        self.message_user(request, f'✅ Decreased {count} stocks in {len(sectors)} sector(s) by -5%: {", ".join(sectors)}')
+    sector_decrease_5.short_description = "📉 Sector Crash -5%"
+    
+    def sector_increase_10(self, request, queryset):
+        """Increase ALL stocks in selected sectors by 10%"""
+        sectors = queryset.values_list('sector', flat=True).distinct()
+        count = 0
+        for sector in sectors:
+            stocks = Stock.objects.filter(sector=sector, is_active=True)
+            for stock in stocks:
+                stock.previous_close = stock.current_price
+                stock.current_price = round(stock.current_price * 1.10, 2)
+                stock.save()
+                count += 1
+        self.message_user(request, f'✅ Increased {count} stocks in {len(sectors)} sector(s) by +10%: {", ".join(sectors)}')
+    sector_increase_10.short_description = "🚀 Major Sector Rally +10%"
+    
+    def sector_decrease_10(self, request, queryset):
+        """Decrease ALL stocks in selected sectors by 10%"""
+        sectors = queryset.values_list('sector', flat=True).distinct()
+        count = 0
+        for sector in sectors:
+            stocks = Stock.objects.filter(sector=sector, is_active=True)
+            for stock in stocks:
+                stock.previous_close = stock.current_price
+                stock.current_price = round(stock.current_price * 0.90, 2)
+                stock.save()
+                count += 1
+        self.message_user(request, f'✅ Decreased {count} stocks in {len(sectors)} sector(s) by -10%: {", ".join(sectors)}')
+    sector_decrease_10.short_description = "💥 Major Sector Crash -10%"
+    
+    def get_urls(self):
+        """Add custom admin URLs"""
+        urls = super().get_urls()
+        custom_urls = [
+            path('market-control/', self.admin_site.admin_view(self.market_control_view), name='stock_market_control'),
+        ]
+        return custom_urls + urls
+    
+    def market_control_view(self, request):
+        """Market control panel view"""
+        from .models import SimulatorSettings
+        
+        # Get current mode
+        try:
+            setting = SimulatorSettings.objects.get(setting_name='use_real_prices')
+            use_real = setting.setting_value.lower() == 'true'
+        except SimulatorSettings.DoesNotExist:
+            use_real = False
+        
+        context = {
+            'title': 'Market Control Center',
+            'use_real_prices': use_real,
+            'stocks': Stock.objects.filter(is_active=True),
+            'sectors': Stock.objects.values_list('sector', flat=True).distinct().order_by('sector'),
+        }
+        return render(request, 'admin/market_control.html', context)
 
 
 @admin.register(SimulatorSettings)
@@ -360,8 +533,114 @@ class TeamAdmin(admin.ModelAdmin):
     activate_team.short_description = "Activate teams"
 
 
+@admin.register(MarketEvent)
+class MarketEventAdmin(admin.ModelAdmin):
+    """Admin interface for creating and triggering market events"""
+    list_display = ('title', 'event_type', 'affected_sector', 'severity_display', 'impact_display', 'status_display', 'triggered_at')
+    list_filter = ('event_type', 'severity', 'is_positive', 'is_triggered', 'is_active', 'affected_sector')
+    search_fields = ('title', 'description', 'affected_sector')
+    ordering = ('-created_at',)
+    
+    fieldsets = (
+        ('Event Information', {
+            'fields': ('title', 'description', 'event_type')
+        }),
+        ('Impact Configuration', {
+            'fields': ('affected_sector', 'severity', 'custom_percentage', 'is_positive'),
+            'description': 'Configure how this event affects stock prices'
+        }),
+        ('Timing', {
+            'fields': ('scheduled_for',),
+            'description': 'Leave empty to trigger manually'
+        }),
+        ('Status', {
+            'fields': ('is_active', 'is_triggered', 'triggered_at', 'stocks_affected'),
+            'classes': ('collapse',)
+        }),
+        ('Impact Data', {
+            'fields': ('total_impact',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ('triggered_at', 'stocks_affected', 'total_impact', 'created_at')
+    
+    actions = ['trigger_event', 'duplicate_event']
+    
+    def severity_display(self, obj):
+        """Display severity with color"""
+        colors = {
+            'minor': '#3b82f6',
+            'moderate': '#f59e0b',
+            'major': '#ef4444',
+            'extreme': '#dc2626',
+            'custom': '#8b5cf6',
+        }
+        color = colors.get(obj.severity, 'black')
+        percentage = obj.get_percentage_change()
+        sign = '+' if obj.is_positive else '-'
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}{:.1f}%</span>',
+            color, sign, abs(percentage)
+        )
+    severity_display.short_description = 'Impact'
+    
+    def impact_display(self, obj):
+        """Display impact direction"""
+        if obj.is_positive:
+            return format_html('<span style="color: green;">📈 BULLISH</span>')
+        return format_html('<span style="color: red;">📉 BEARISH</span>')
+    impact_display.short_description = 'Direction'
+    
+    def status_display(self, obj):
+        """Display event status"""
+        if obj.is_triggered:
+            return format_html(
+                '<span style="color: gray;">✅ Triggered ({} stocks)</span>',
+                obj.stocks_affected
+            )
+        elif obj.scheduled_for and obj.scheduled_for > timezone.now():
+            return format_html('<span style="color: orange;">⏰ Scheduled</span>')
+        else:
+            return format_html('<span style="color: blue;">⚡ Ready</span>')
+    status_display.short_description = 'Status'
+    
+    def trigger_event(self, request, queryset):
+        """Trigger selected market events"""
+        triggered = 0
+        already_triggered = 0
+        
+        for event in queryset:
+            if event.is_triggered:
+                already_triggered += 1
+                continue
+            
+            result = event.trigger_event()
+            if result['success']:
+                triggered += 1
+        
+        if triggered > 0:
+            self.message_user(request, f'✅ Triggered {triggered} market event(s)! Teams will see price changes.')
+        if already_triggered > 0:
+            self.message_user(request, f'ℹ️ {already_triggered} event(s) were already triggered', level='warning')
+    trigger_event.short_description = "⚡ TRIGGER selected events"
+    
+    def duplicate_event(self, request, queryset):
+        """Duplicate selected events"""
+        for event in queryset:
+            event.pk = None
+            event.is_triggered = False
+            event.triggered_at = None
+            event.stocks_affected = 0
+            event.total_impact = ''
+            event.title = f"{event.title} (Copy)"
+            event.save()
+        
+        self.message_user(request, f'✅ Created {queryset.count()} duplicate event(s)')
+    duplicate_event.short_description = "📋 Duplicate events"
+
+
 # Customize admin site headers
-admin.site.site_header = "TradeSim Event Control Center"
+admin.site.site_header = "TradeSim Market Control Center"
 admin.site.site_title = "TradeSim Admin"
-admin.site.index_title = "Trading Competition Management"
 admin.site.index_title = "Market Control Dashboard"

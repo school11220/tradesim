@@ -217,7 +217,7 @@ def addtoWatchlist(request,query):
 
 def trigger_price_update(request):
     """
-    API endpoint to trigger stock price updates
+    API endpoint to trigger stock price updates (simulated)
     Can be called by cron jobs or manually to update all stock prices
     """
     from app1.models import Stock
@@ -258,6 +258,7 @@ def trigger_price_update(request):
         
         return JsonResponse({
             'success': True,
+            'mode': 'simulated',
             'updated_count': updated_count,
             'volatility': volatility,
             'updates': updates
@@ -267,4 +268,242 @@ def trigger_price_update(request):
         return JsonResponse({
             'success': False,
             'error': str(e)
+        }, status=500)
+
+
+def update_prices_real(request):
+    """
+    API endpoint to update stock prices from REAL market data via Yahoo Finance
+    """
+    from app1.models import Stock
+    from datetime import datetime
+    
+    try:
+        import yfinance as yf
+    except ImportError:
+        return JsonResponse({
+            'success': False,
+            'error': 'yfinance not installed. Run: pip install yfinance'
+        }, status=500)
+    
+    try:
+        stocks = Stock.objects.filter(is_active=True)
+        
+        if not stocks.exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'No active stocks found'
+            })
+        
+        updated_count = 0
+        failed = []
+        updates = []
+        
+        for stock in stocks:
+            try:
+                ticker = yf.Ticker(stock.symbol)
+                info = ticker.info
+                
+                # Try to get current price from different fields
+                current_price = None
+                for field in ['regularMarketPrice', 'currentPrice', 'price', 'previousClose']:
+                    if field in info and info[field]:
+                        current_price = float(info[field])
+                        break
+                
+                if current_price and current_price > 0:
+                    old_price = float(stock.current_price)
+                    stock.previous_close = old_price
+                    stock.current_price = current_price
+                    stock.last_updated = datetime.now()
+                    stock.save()
+                    
+                    change = current_price - old_price
+                    change_pct = (change / old_price) * 100 if old_price > 0 else 0
+                    
+                    updates.append({
+                        'symbol': stock.symbol,
+                        'old_price': round(old_price, 2),
+                        'new_price': round(current_price, 2),
+                        'change': round(change, 2),
+                        'change_percent': round(change_pct, 2)
+                    })
+                    updated_count += 1
+                else:
+                    failed.append(stock.symbol)
+            except Exception as e:
+                failed.append(stock.symbol)
+        
+        return JsonResponse({
+            'success': True,
+            'mode': 'real_market',
+            'updated_count': updated_count,
+            'total_stocks': len(stocks),
+            'failed': failed,
+            'updates': updates
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+def update_prices_auto(request):
+    """
+    API endpoint that checks simulator setting and uses appropriate update method
+    """
+    from app1.models import SimulatorSettings
+    
+    try:
+        setting = SimulatorSettings.objects.get(setting_name='use_real_prices')
+        use_real = setting.setting_value.lower() == 'true'
+    except SimulatorSettings.DoesNotExist:
+        use_real = False
+    
+    if use_real:
+        return update_prices_real(request)
+    else:
+        return trigger_price_update(request)
+
+
+def toggle_price_mode(request):
+    """
+    API endpoint to toggle between real and simulated price updates
+    """
+    from app1.models import SimulatorSettings
+    from django.views.decorators.http import require_http_methods
+    
+    if not request.user.is_staff:
+        return JsonResponse({
+            'success': False,
+            'error': 'Admin access required'
+        }, status=403)
+    
+    try:
+        setting, created = SimulatorSettings.objects.get_or_create(
+            setting_name='use_real_prices',
+            defaults={
+                'setting_value': 'false',
+                'description': 'Use real stock market prices from Yahoo Finance'
+            }
+        )
+        
+        # Toggle the value
+        current = setting.setting_value.lower() == 'true'
+        new_value = not current
+        setting.setting_value = str(new_value).lower()
+        setting.save()
+        
+        return JsonResponse({
+            'success': True,
+            'use_real_prices': new_value,
+            'message': f'Switched to {"REAL market data" if new_value else "SIMULATED prices"}'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+def adjust_sector(request):
+    """
+    API endpoint to adjust prices for an entire sector by custom percentage
+    """
+    from app1.models import Stock
+    import json
+    
+    if not request.user.is_staff:
+        return JsonResponse({
+            'success': False,
+            'error': 'Admin access required'
+        }, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        sector = data.get('sector')
+        percentage = float(data.get('percentage', 0))
+        
+        if not sector:
+            return JsonResponse({
+                'success': False,
+                'error': 'Sector is required'
+            }, status=400)
+        
+        stocks = Stock.objects.filter(sector=sector, is_active=True)
+        
+        if not stocks.exists():
+            return JsonResponse({
+                'success': False,
+                'error': f'No active stocks found in {sector} sector'
+            }, status=404)
+        
+        multiplier = 1 + (percentage / 100)
+        
+        for stock in stocks:
+            stock.previous_close = stock.current_price
+            stock.current_price = round(stock.current_price * multiplier, 2)
+            stock.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Adjusted {stocks.count()} stocks in {sector} sector by {percentage:+.2f}%',
+            'sector': sector,
+            'percentage': percentage,
+            'stocks_affected': stocks.count()
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+def get_market_events(request):
+    """
+    API endpoint to get recent market events for teams
+    Returns active events from the last 24 hours
+    """
+    from app1.models import MarketEvent
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    try:
+        # Get events from last 24 hours
+        cutoff_time = timezone.now() - timedelta(hours=24)
+        
+        events = MarketEvent.objects.filter(
+            is_active=True,
+            is_triggered=True,
+            triggered_at__gte=cutoff_time
+        ).order_by('-triggered_at')[:10]  # Latest 10 events
+        
+        events_data = []
+        for event in events:
+            events_data.append({
+                'id': event.id,
+                'title': event.title,
+                'description': event.description,
+                'event_type': event.get_event_type_display(),
+                'affected_sector': event.affected_sector,
+                'percentage': event.get_percentage_change(),
+                'is_positive': event.is_positive,
+                'stocks_affected': event.stocks_affected,
+                'triggered_at': event.triggered_at.isoformat()
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'events': events_data,
+            'count': len(events_data)
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'events': []
         }, status=500)
