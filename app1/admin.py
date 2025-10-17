@@ -191,8 +191,8 @@ class StockAdmin(admin.ModelAdmin):
                 multiplier = 1 + (percentage / 100)
                 
                 for stock in queryset:
-                    stock.previous_close = stock.current_price
-                    stock.current_price = round(stock.current_price * multiplier, 2)
+                    stock.previous_close = float(stock.current_price)
+                    stock.current_price = round(float(stock.current_price) * multiplier, 2)
                     stock.save()
                 
                 self.message_user(request, f'✅ Applied {percentage:+.2f}% change to {queryset.count()} stock(s)')
@@ -214,8 +214,8 @@ class StockAdmin(admin.ModelAdmin):
         for sector in sectors:
             stocks = Stock.objects.filter(sector=sector, is_active=True)
             for stock in stocks:
-                stock.previous_close = stock.current_price
-                stock.current_price = round(stock.current_price * 1.05, 2)
+                stock.previous_close = float(stock.current_price)
+                stock.current_price = round(float(stock.current_price) * 1.05, 2)
                 stock.save()
                 count += 1
         self.message_user(request, f'✅ Increased {count} stocks in {len(sectors)} sector(s) by +5%: {", ".join(sectors)}')
@@ -229,8 +229,8 @@ class StockAdmin(admin.ModelAdmin):
         for sector in sectors:
             stocks = Stock.objects.filter(sector=sector, is_active=True)
             for stock in stocks:
-                stock.previous_close = stock.current_price
-                stock.current_price = round(stock.current_price * 0.95, 2)
+                stock.previous_close = float(stock.current_price)
+                stock.current_price = round(float(stock.current_price) * 0.95, 2)
                 stock.save()
                 count += 1
         self.message_user(request, f'✅ Decreased {count} stocks in {len(sectors)} sector(s) by -5%: {", ".join(sectors)}')
@@ -244,8 +244,8 @@ class StockAdmin(admin.ModelAdmin):
         for sector in sectors:
             stocks = Stock.objects.filter(sector=sector, is_active=True)
             for stock in stocks:
-                stock.previous_close = stock.current_price
-                stock.current_price = round(stock.current_price * 1.10, 2)
+                stock.previous_close = float(stock.current_price)
+                stock.current_price = round(float(stock.current_price) * 1.10, 2)
                 stock.save()
                 count += 1
         self.message_user(request, f'✅ Increased {count} stocks in {len(sectors)} sector(s) by +10%: {", ".join(sectors)}')
@@ -259,8 +259,8 @@ class StockAdmin(admin.ModelAdmin):
         for sector in sectors:
             stocks = Stock.objects.filter(sector=sector, is_active=True)
             for stock in stocks:
-                stock.previous_close = stock.current_price
-                stock.current_price = round(stock.current_price * 0.90, 2)
+                stock.previous_close = float(stock.current_price)
+                stock.current_price = round(float(stock.current_price) * 0.90, 2)
                 stock.save()
                 count += 1
         self.message_user(request, f'✅ Decreased {count} stocks in {len(sectors)} sector(s) by -10%: {", ".join(sectors)}')

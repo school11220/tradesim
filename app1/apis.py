@@ -457,8 +457,8 @@ def adjust_sector(request):
         multiplier = 1 + (percentage / 100)
         
         for stock in stocks:
-            stock.previous_close = stock.current_price
-            stock.current_price = round(stock.current_price * multiplier, 2)
+            stock.previous_close = float(stock.current_price)
+            stock.current_price = round(float(stock.current_price) * multiplier, 2)
             stock.save()
         
         return JsonResponse({
