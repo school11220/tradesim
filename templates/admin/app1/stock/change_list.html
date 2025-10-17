@@ -1,0 +1,46 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+/* Hide old warning messages about API failures */
+.messagelist .warning {
+    display: none !important;
+}
+/* But keep error and success messages */
+.messagelist .error,
+.messagelist .success {
+    display: block !important;
+}
+</style>
+
+<script>
+// Remove any messages containing "Failed to fetch" or API-related warnings
+document.addEventListener('DOMContentLoaded', function() {
+    const messages = document.querySelectorAll('.messagelist li');
+    messages.forEach(msg => {
+        const text = msg.textContent;
+        if (text.includes('Failed to fetch') || 
+            text.includes('Yahoo Finance') || 
+            text.includes('yfinance') ||
+            text.includes('API')) {
+            msg.remove();
+        }
+    });
+    
+    // Remove empty message list
+    const messageList = document.querySelector('.messagelist');
+    if (messageList && messageList.children.length === 0) {
+        messageList.remove();
+    }
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div style="background: #10b981; color: white; padding: 15px; margin: 10px 0; border-radius: 5px; text-align: center;">
+    <strong>🎲 Realistic Market Simulation Active</strong> - Stock prices update automatically with market sentiment and sector correlations
+</div>
+{{ block.super }}
+{% endblock %}

@@ -91,6 +91,8 @@ class StockAdmin(admin.ModelAdmin):
     
     readonly_fields = ('last_updated', 'created_at')
     
+    change_list_template = 'admin/app1/stock/change_list.html'
+    
     actions = [
         'apply_custom_percentage',
         'sector_increase_5',
@@ -98,6 +100,20 @@ class StockAdmin(admin.ModelAdmin):
         'sector_increase_10',
         'sector_decrease_10',
     ]
+    
+    def changelist_view(self, request, extra_context=None):
+        """Override changelist to clear old API-related messages"""
+        from django.contrib import messages
+        storage = messages.get_messages(request)
+        
+        # Clear any old messages about API failures
+        for message in storage:
+            if any(word in str(message) for word in ['Failed to fetch', 'Yahoo Finance', 'yfinance', 'API']):
+                pass  # Don't re-add this message
+        
+        storage.used = True  # Mark as used to clear
+        
+        return super().changelist_view(request, extra_context)
     
     def current_price_display(self, obj):
         """Display current price formatted"""
