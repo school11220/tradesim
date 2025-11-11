@@ -438,7 +438,7 @@
                     
                     const stockData = data.stocks[symbol];
                     const quantity = parseInt(row.cells[1].textContent);
-                    const avgCost = parseFloat(row.cells[2].textContent.replace('$', ''));
+                    const avgCost = parseFloat(row.cells[2].textContent.replace('₹', '').replace(/,/g, ''));
                     
                     // Update current price
                     const priceCell = row.cells[3];
@@ -459,7 +459,7 @@
                     const plCell = row.cells[5];
                     plCell.className = pl >= 0 ? 'gain-positive' : 'gain-negative';
                     plCell.innerHTML = `
-                        ${pl >= 0 ? '+' : ''}$${pl.toFixed(2)}
+                        ${pl >= 0 ? '+' : ''}₹${pl.toFixed(2)}
                         <div style="font-size: 0.875rem; margin-top: 2px;">
                             (${pl >= 0 ? '▲' : '▼'} ${plPercent.toFixed(2)}%)
                         </div>
@@ -480,7 +480,7 @@
                 // Update total P&L
                 const plCard = document.querySelectorAll('.summary-value')[3];
                 if (plCard) {
-                    plCard.textContent = `${totalPL >= 0 ? '+' : ''}$${totalPL.toFixed(2)}`;
+                    plCard.textContent = `${totalPL >= 0 ? '+' : ''}₹${totalPL.toFixed(2)}`;
                     plCard.className = `summary-value ${totalPL >= 0 ? 'gain-positive' : 'gain-negative'}`;
                 }
                 

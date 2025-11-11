@@ -594,7 +594,7 @@
                     </div>
                     <div class="cost-row total-row">
                         <span class="cost-label" style="font-size: 1.2rem;">Total Revenue</span>
-                        <span class="cost-value" id="sellTotal">${% if holding.quantity > 0 %}{{ stock.current_price|floatformat:2 }}{% else %}0.00{% endif %}</span>
+                        <span class="cost-value" id="sellTotal">₹{% if holding.quantity > 0 %}{{ stock.current_price|floatformat:2 }}{% else %}0.00{% endif %}</span>
                     </div>
                 </div>
                 
@@ -628,17 +628,19 @@
     }
 
     function formatCurrency(number) {
-        // Corrected object syntax with colons and commas
-        return new Intl.NumberFormat('en-US', {
+        // Format as Indian Rupees
+        return new Intl.NumberFormat('en-IN', {
             style: 'currency',
-            currency: 'USD'
+            currency: 'INR',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         }).format(number);
     }
     
     function updateTradeSummary(type) {
         // Get the current price directly from the DOM to avoid stale data
         const priceElement = document.getElementById('currentPrice');
-        const stockPrice = parseFloat(priceElement.textContent.replace('$', '').replace(/,/g, ''));
+        const stockPrice = parseFloat(priceElement.textContent.replace('₹', '').replace(/,/g, ''));
 
         // Get the quantity input element
         const quantityInput = document.getElementById(`${type}Quantity`);

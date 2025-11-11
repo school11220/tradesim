@@ -733,7 +733,7 @@ def team_trade(request, symbol):
                 
                 # Check if team has enough balance
                 if total_cost > float(team.balance):
-                    error = f"Insufficient balance. Need ${total_cost:,.2f}, have ${float(team.balance):,.2f}"
+                    error = f"Insufficient balance. Need ₹{total_cost:,.2f}, have ₹{float(team.balance):,.2f}"
                 else:
                     # Execute buy
                     current_quantity = holding.get('quantity', 0)
@@ -768,7 +768,7 @@ def team_trade(request, symbol):
                     
                     team.save()
                     
-                    success = f"Successfully bought {quantity} shares of {symbol} for ${total_cost:,.2f}"
+                    success = f"Successfully bought {quantity} shares of {symbol} for ₹{total_cost:,.2f}"
                     
             elif action == "sell":
                 # Check if team owns enough shares
@@ -805,7 +805,7 @@ def team_trade(request, symbol):
                     
                     team.save()
                     
-                    success = f"Successfully sold {quantity} shares of {symbol} for ${total_revenue:,.2f}"
+                    success = f"Successfully sold {quantity} shares of {symbol} for ₹{total_revenue:,.2f}"
             
             # Refresh holding data after trade
             holding = team.portfolio.get(symbol, {'quantity': 0, 'avg_price': 0})

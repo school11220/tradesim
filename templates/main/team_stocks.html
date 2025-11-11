@@ -513,7 +513,7 @@
                         changeEl.className = `price-change ${isPositive ? 'up' : 'down'}`;
                         changeEl.innerHTML = `
                             ${isPositive ? '▲' : '▼'}
-                            $${Math.abs(stockData.change).toFixed(2)} (${stockData.change_percent.toFixed(2)}%)
+                            ₹${Math.abs(stockData.change).toFixed(2)} (${stockData.change_percent.toFixed(2)}%)
                         `;
                         
                         // Flash animation
