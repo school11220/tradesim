@@ -369,6 +369,98 @@ class TeamAdmin(admin.ModelAdmin):
     search_fields = ('team_code', 'team_name', 'leader_name', 'leader_email')
     ordering = ('-registration_time',)
     readonly_fields = ('team_code', 'registration_time', 'portfolio_value_display', 'profit_loss_display', 'profit_loss_percent_display', 'rank_display', 'trade_history_display')
+    change_list_template = 'admin/team_leaderboard.html'
+    
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('leaderboard/', self.admin_site.admin_view(self.leaderboard_view), name='team_leaderboard'),
+        ]
+        return custom_urls + urls
+    
+    def leaderboard_view(self, request):
+        """Display team leaderboard with sorting"""
+        from django.db.models import F, FloatField, ExpressionWrapper
+        from app1.models import Stock
+        
+        # Get filter parameters
+        event_id = request.GET.get('event', None)
+        sort_by = request.GET.get('sort', 'portfolio_value')
+        order = request.GET.get('order', 'desc')
+        
+        # Base queryset
+        teams = Team.objects.filter(is_active=True)
+        
+        # Filter by event if specified
+        if event_id:
+            teams = teams.filter(event_id=event_id)
+        
+        # Calculate portfolio values for each team
+        team_data = []
+        for team in teams:
+            # Calculate portfolio value
+            portfolio_value = float(team.balance)
+            holdings_value = 0
+            
+            for symbol, holding in team.portfolio.items():
+                try:
+                    stock = Stock.objects.get(symbol=symbol, is_active=True)
+                    holdings_value += holding['quantity'] * float(stock.current_price)
+                except Stock.DoesNotExist:
+                    pass
+            
+            portfolio_value += holdings_value
+            
+            # Calculate P/L
+            initial_capital = float(team.event.initial_capital)
+            profit_loss = portfolio_value - initial_capital
+            profit_loss_percent = (profit_loss / initial_capital * 100) if initial_capital > 0 else 0
+            
+            team_data.append({
+                'team': team,
+                'portfolio_value': portfolio_value,
+                'balance': float(team.balance),
+                'holdings_value': holdings_value,
+                'profit_loss': profit_loss,
+                'profit_loss_percent': profit_loss_percent,
+                'total_trades': team.total_trades,
+                'initial_capital': initial_capital,
+            })
+        
+        # Sort teams
+        reverse = (order == 'desc')
+        if sort_by == 'portfolio_value':
+            team_data.sort(key=lambda x: x['portfolio_value'], reverse=reverse)
+        elif sort_by == 'profit_loss':
+            team_data.sort(key=lambda x: x['profit_loss'], reverse=reverse)
+        elif sort_by == 'profit_loss_percent':
+            team_data.sort(key=lambda x: x['profit_loss_percent'], reverse=reverse)
+        elif sort_by == 'total_trades':
+            team_data.sort(key=lambda x: x['total_trades'], reverse=reverse)
+        elif sort_by == 'balance':
+            team_data.sort(key=lambda x: x['balance'], reverse=reverse)
+        elif sort_by == 'holdings_value':
+            team_data.sort(key=lambda x: x['holdings_value'], reverse=reverse)
+        
+        # Add rank to each team
+        for idx, team_info in enumerate(team_data, 1):
+            team_info['rank'] = idx
+        
+        # Get all events for filter dropdown
+        events = Event.objects.all().order_by('-start_time')
+        
+        context = {
+            'team_data': team_data,
+            'events': events,
+            'selected_event': event_id,
+            'sort_by': sort_by,
+            'order': order,
+            'title': 'Team Leaderboard',
+            'site_title': 'TradeWars Admin',
+            'has_permission': True,
+        }
+        
+        return render(request, 'admin/team_leaderboard_full.html', context)
     
     fieldsets = (
         ('Team Information', {

@@ -1,0 +1,390 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+<style>
+    .leaderboard-container {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .leaderboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 3px solid #417690;
+    }
+    
+    .leaderboard-title {
+        font-size: 2em;
+        color: #417690;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .filters-section {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .filter-group label {
+        font-weight: bold;
+        font-size: 0.9em;
+        color: #666;
+    }
+    
+    .filter-group select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        min-width: 200px;
+    }
+    
+    .sort-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .sort-btn {
+        padding: 8px 15px;
+        border: 2px solid #417690;
+        background: white;
+        color: #417690;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        text-decoration: none;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .sort-btn:hover {
+        background: #417690;
+        color: white;
+    }
+    
+    .sort-btn.active {
+        background: #417690;
+        color: white;
+    }
+    
+    .leaderboard-table {
+        width: 100%;
+        border-collapse: collapse;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .leaderboard-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .leaderboard-table th {
+        padding: 15px;
+        text-align: left;
+        font-weight: bold;
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+    }
+    
+    .leaderboard-table th:hover {
+        background: rgba(255,255,255,0.1);
+    }
+    
+    .leaderboard-table th .sort-indicator {
+        position: absolute;
+        right: 10px;
+        font-size: 0.8em;
+    }
+    
+    .leaderboard-table tbody tr {
+        border-bottom: 1px solid #eee;
+        transition: all 0.3s;
+    }
+    
+    .leaderboard-table tbody tr:hover {
+        background: #f8f9fa;
+        transform: scale(1.01);
+    }
+    
+    .leaderboard-table td {
+        padding: 15px;
+    }
+    
+    .rank-cell {
+        font-size: 1.5em;
+        font-weight: bold;
+        text-align: center;
+        width: 80px;
+    }
+    
+    .rank-1 { color: #FFD700; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+    .rank-2 { color: #C0C0C0; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+    .rank-3 { color: #CD7F32; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+    
+    .team-info {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .team-name {
+        font-weight: bold;
+        font-size: 1.1em;
+        color: #333;
+    }
+    
+    .team-code {
+        font-size: 0.9em;
+        color: #666;
+        font-family: monospace;
+    }
+    
+    .team-leader {
+        font-size: 0.85em;
+        color: #888;
+    }
+    
+    .value-cell {
+        font-family: monospace;
+        font-size: 1.1em;
+        font-weight: bold;
+    }
+    
+    .positive {
+        color: #10b981;
+    }
+    
+    .negative {
+        color: #ef4444;
+    }
+    
+    .neutral {
+        color: #6b7280;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .stat-item {
+        background: rgba(255,255,255,0.1);
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+    }
+    
+    .stat-label {
+        font-size: 0.9em;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+    
+    .stat-value {
+        font-size: 1.5em;
+        font-weight: bold;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.85em;
+        font-weight: bold;
+    }
+    
+    .badge-active {
+        background: #10b981;
+        color: white;
+    }
+    
+    .badge-inactive {
+        background: #6b7280;
+        color: white;
+    }
+    
+    .badge-disqualified {
+        background: #ef4444;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="leaderboard-container">
+    <div class="leaderboard-header">
+        <h1 class="leaderboard-title">
+            🏆 Team Leaderboard
+        </h1>
+        <div>
+            <a href="{% url 'admin:app1_team_changelist' %}" class="button" style="background: #6b7280; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
+                ← Back to Teams
+            </a>
+        </div>
+    </div>
+    
+    <!-- Stats Overview -->
+    <div class="stats-card">
+        <h3 style="margin: 0 0 10px 0;">📊 Competition Overview</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Total Teams</div>
+                <div class="stat-value">{{ team_data|length }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Average Portfolio</div>
+                <div class="stat-value">₹{% widthratio team_data|length 1 team_data|length as avg %}{{ avg|floatformat:2 }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total Trades</div>
+                <div class="stat-value">{% for t in team_data %}{{ t.total_trades }}{% if not forloop.last %}+{% endif %}{% endfor %}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Top Performer</div>
+                <div class="stat-value">{% if team_data %}{{ team_data.0.team.team_name }}{% else %}-{% endif %}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <form method="get" class="filters-section">
+        <div class="filter-group">
+            <label for="event-filter">Event:</label>
+            <select name="event" id="event-filter" onchange="this.form.submit()">
+                <option value="">All Events</option>
+                {% for event in events %}
+                <option value="{{ event.id }}" {% if selected_event == event.id|stringformat:"s" %}selected{% endif %}>
+                    {{ event.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Sort By:</label>
+            <div class="sort-buttons">
+                <a href="?event={{ selected_event }}&sort=portfolio_value&order={% if sort_by == 'portfolio_value' and order == 'desc' %}asc{% else %}desc{% endif %}" 
+                   class="sort-btn {% if sort_by == 'portfolio_value' %}active{% endif %}">
+                    💼 Portfolio {% if sort_by == 'portfolio_value' %}{{ order|upper }}{% endif %}
+                </a>
+                <a href="?event={{ selected_event }}&sort=profit_loss&order={% if sort_by == 'profit_loss' and order == 'desc' %}asc{% else %}desc{% endif %}" 
+                   class="sort-btn {% if sort_by == 'profit_loss' %}active{% endif %}">
+                    💰 P/L Amount {% if sort_by == 'profit_loss' %}{{ order|upper }}{% endif %}
+                </a>
+                <a href="?event={{ selected_event }}&sort=profit_loss_percent&order={% if sort_by == 'profit_loss_percent' and order == 'desc' %}asc{% else %}desc{% endif %}" 
+                   class="sort-btn {% if sort_by == 'profit_loss_percent' %}active{% endif %}">
+                    📊 P/L % {% if sort_by == 'profit_loss_percent' %}{{ order|upper }}{% endif %}
+                </a>
+                <a href="?event={{ selected_event }}&sort=total_trades&order={% if sort_by == 'total_trades' and order == 'desc' %}asc{% else %}desc{% endif %}" 
+                   class="sort-btn {% if sort_by == 'total_trades' %}active{% endif %}">
+                    📈 Trades {% if sort_by == 'total_trades' %}{{ order|upper }}{% endif %}
+                </a>
+            </div>
+        </div>
+    </form>
+    
+    <!-- Leaderboard Table -->
+    <table class="leaderboard-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Team</th>
+                <th>Event</th>
+                <th>Portfolio Value</th>
+                <th>Cash Balance</th>
+                <th>Holdings Value</th>
+                <th>Profit/Loss</th>
+                <th>P/L %</th>
+                <th>Total Trades</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in team_data %}
+            <tr>
+                <td class="rank-cell rank-{{ data.rank }}">
+                    {% if data.rank == 1 %}🥇
+                    {% elif data.rank == 2 %}🥈
+                    {% elif data.rank == 3 %}🥉
+                    {% else %}#{{ data.rank }}
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="team-info">
+                        <span class="team-name">{{ data.team.team_name }}</span>
+                        <span class="team-code">{{ data.team.team_code }}</span>
+                        <span class="team-leader">👤 {{ data.team.leader_name }}</span>
+                    </div>
+                </td>
+                <td>{{ data.team.event.name }}</td>
+                <td class="value-cell {% if data.portfolio_value >= data.initial_capital %}positive{% else %}negative{% endif %}">
+                    ₹{{ data.portfolio_value|floatformat:2 }}
+                </td>
+                <td class="value-cell neutral">
+                    ₹{{ data.balance|floatformat:2 }}
+                </td>
+                <td class="value-cell neutral">
+                    ₹{{ data.holdings_value|floatformat:2 }}
+                </td>
+                <td class="value-cell {% if data.profit_loss >= 0 %}positive{% else %}negative{% endif %}">
+                    {% if data.profit_loss >= 0 %}+{% endif %}₹{{ data.profit_loss|floatformat:2 }}
+                </td>
+                <td class="value-cell {% if data.profit_loss_percent >= 0 %}positive{% else %}negative{% endif %}">
+                    {% if data.profit_loss_percent >= 0 %}+{% endif %}{{ data.profit_loss_percent|floatformat:2 }}%
+                </td>
+                <td class="value-cell neutral">
+                    {{ data.total_trades }}
+                </td>
+                <td>
+                    {% if data.team.is_disqualified %}
+                    <span class="badge badge-disqualified">Disqualified</span>
+                    {% elif data.team.is_active %}
+                    <span class="badge badge-active">Active</span>
+                    {% else %}
+                    <span class="badge badge-inactive">Inactive</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" style="text-align: center; padding: 40px; color: #999;">
+                    No teams found. Teams will appear here once they register for events.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
