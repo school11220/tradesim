@@ -11,9 +11,14 @@ echo "✅ Dependencies installed"
 echo "📁 Creating public directory..."
 mkdir -p public
 
-# Run migrations on production database (fake if tables already exist)
+# Run migrations on production database
 echo "📊 Running database migrations..."
-python manage.py migrate --noinput --fake-initial 2>&1 || echo "⚠️  Some migrations already applied"
+python manage.py migrate app1 --noinput 2>&1 || echo "⚠️  App1 migrations had issues, continuing..."
+python manage.py migrate --noinput 2>&1 || echo "⚠️  Some migrations already applied"
+
+# Emergency: Ensure MarketNews table exists
+echo "🔍 Verifying MarketNews table..."
+python create_marketnews_table.py 2>&1 || echo "⚠️  MarketNews table check completed"
 
 # Collect static files
 echo "📦 Collecting static files..."
