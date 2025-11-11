@@ -1,11 +1,9 @@
-name: Update Stock Prices from Yahoo Finance (Optimized for Events)
+name: Update Stock Prices Every 5 Minutes
 
 on:
   schedule:
-    # Run every 5 minutes (12 times per hour)
-    # Optimized for 8-10 hour events with 116 stocks
-    # = 1,392 requests/hour (well under 1,800 limit)
-    - cron: '*/5 * * * *'  # Every 5 minutes, all day
+    # Run every 5 minutes for frequent price updates during events
+    - cron: '*/5 * * * *'
   workflow_dispatch: # Manual trigger for testing
 
 jobs:
