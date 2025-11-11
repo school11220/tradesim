@@ -1,39 +1,76 @@
-name: Update Stock Prices with Realistic Simulation
+name: Update Stock Prices from Yahoo Finance (Optimized for Events)
 
 on:
   schedule:
-    # Run every 1 minute during market hours for continuous simulation
-    # Simulates realistic market movements with sentiment and volatility
-    # Monday-Friday only (trading days)
-    - cron: '* 9-21 * * 1-5'
-  workflow_dispatch: # Allow manual trigger from GitHub Actions tab
+    # Run every 5 minutes (12 times per hour)
+    # Optimized for 8-10 hour events with 116 stocks
+    # = 1,392 requests/hour (well under 1,800 limit)
+    - cron: '*/5 * * * *'  # Every 5 minutes, all day
+  workflow_dispatch: # Manual trigger for testing
 
 jobs:
   update-prices:
     runs-on: ubuntu-latest
+    timeout-minutes: 5  # Fail fast if hanging
     
     steps:
-      - name: Simulate Stock Price Movements
+      - name: Fetch Real Prices from Yahoo Finance API
+        timeout-minutes: 4  # Individual step timeout
         run: |
-          echo "🎲 Running realistic stock price simulation..."
+          echo "📡 Fetching REAL stock prices from Yahoo Finance API..."
           echo "⏰ Current time: $(date -u)"
+          echo "🌐 Using yfinance library to get live market data"
+          echo "📊 Optimized: 116 stocks = 1,392 req/hr (safe for 10+ hours)"
           
-          # Call the simulation update endpoint
-          response=$(curl -s -w "\n%{http_code}" -X GET "https://tradesim-lyart.vercel.app/api/update-prices-real")
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | head -n-1)
+          # Call the Yahoo Finance API endpoint with retries
+          MAX_RETRIES=3
+          RETRY_COUNT=0
           
-          echo "📊 Response:"
-          echo "$body" | jq '.' || echo "$body"
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            echo "Attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES..."
+            
+            response=$(curl -s -w "\n%{http_code}" -X GET \
+              --max-time 180 \
+              --retry 2 \
+              --retry-delay 5 \
+              "https://tradesim-lyart.vercel.app/api/update-prices-real")
+            
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | head -n-1)
+            
+            if [ "$http_code" -eq 200 ]; then
+              echo "✅ Success!"
+              echo "$body" | jq '.' || echo "$body"
+              
+              # Extract and display metrics
+              updated=$(echo "$body" | jq -r '.updated_count // 0')
+              total=$(echo "$body" | jq -r '.total_stocks // 0')
+              failed=$(echo "$body" | jq -r '.failed_count // 0')
+              
+              echo ""
+              echo "📈 Results:"
+              echo "  ✓ Updated: $updated stocks"
+              echo "  ✗ Failed: $failed stocks"
+              echo "  📊 Total: $total stocks"
+              echo "  🎯 Success Rate: $((updated * 100 / total))%"
+              
+              exit 0
+            else
+              echo "❌ Failed with HTTP $http_code"
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "⏳ Waiting 10 seconds before retry..."
+                sleep 10
+              fi
+            fi
+          done
           
-          if [ "$http_code" -eq 200 ]; then
-            echo "✅ Stock prices simulated successfully!"
-            # Extract success metrics
-            updated=$(echo "$body" | jq -r '.updated_count // 0')
-            total=$(echo "$body" | jq -r '.total_stocks // 0')
-            sentiment=$(echo "$body" | jq -r '.market_sentiment // "unknown"')
-            echo "📈 Updated $updated out of $total stocks (Market: $sentiment)"
-          else
-            echo "❌ Failed to simulate prices (HTTP $http_code)"
-            exit 1
-          fi
+          echo "❌ All retries failed"
+          echo "⚠️  This may be due to:"
+          echo "  - Yahoo Finance rate limiting"
+          echo "  - Network issues"
+          echo "  - Vercel timeout"
+          echo ""
+          echo "💡 Next update in 5 minutes will retry"
+          exit 1

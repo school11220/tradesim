@@ -954,3 +954,44 @@ def team_stock_prices_api(request):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+def team_news(request):
+    """View market news and events for teams"""
+    if not request.session.get('is_team'):
+        return redirect('team_login')
+    
+    try:
+        team_id = request.session.get('team_id')
+        team = Team.objects.get(id=team_id)
+        
+        from app1.models import MarketNews
+        from django.utils import timezone
+        from django.db.models import Q
+        
+        # Get active news that hasn't expired
+        news_list = MarketNews.objects.filter(
+            is_active=True
+        ).filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+        ).order_by('-published_at')[:20]  # Last 20 news items
+        
+        data = {
+            'team': team,
+            'team_code': team.team_code,
+            'team_name': team.team_name,
+            'news_list': news_list,
+            'news_count': news_list.count(),
+            'event': team.event,
+            'title': 'Market News'
+        }
+        
+        return render(request, "main/team_news.html", data)
+        
+    except Team.DoesNotExist:
+        request.session.flush()
+        return redirect('team_login')
+    except Exception as e:
+        from django.contrib import messages
+        messages.error(request, f"Error loading news: {str(e)}")
+        return redirect('team_dashboard')

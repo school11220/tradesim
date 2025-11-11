@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TradeSim | {{ title }}</title>
+    <title>TradeWars | {{ title }}</title>
+    {% block extra_css %}{% endblock %}
     <style>
         * {
             margin: 0;
@@ -177,8 +178,8 @@
     <nav class="navbar">
         <div class="navbar-content">
             <a href="{% url 'team_dashboard' %}" class="navbar-brand">
-                <span>📊</span>
-                <span>TradeSim</span>
+                <span>⚔️</span>
+                <span>TradeWars</span>
             </a>
             
             <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
@@ -192,6 +193,9 @@
                 </a>
                 <a href="{% url 'team_portfolio' %}" class="nav-link {% if request.resolver_match.url_name == 'team_portfolio' %}active{% endif %}">
                     💼 Portfolio
+                </a>
+                <a href="{% url 'team_news' %}" class="nav-link {% if request.resolver_match.url_name == 'team_news' %}active{% endif %}">
+                    📰 News
                 </a>
                 <a href="{% url 'team_logout' %}" class="nav-link logout">
                     🚪 Logout

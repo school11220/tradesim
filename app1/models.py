@@ -229,6 +229,95 @@ class Team(models.Model):
             return None
 
 
-# MarketEvent model temporarily disabled
-# Will be added after site is working properly
-# See STOCK_API_GUIDE.md for instructions
+class MarketNews(models.Model):
+    """Model for market news and events that affect stock prices"""
+    IMPACT_CHOICES = [
+        ('positive', '📈 Positive (Bullish)'),
+        ('negative', '📉 Negative (Bearish)'),
+        ('neutral', '➡️ Neutral'),
+        ('mixed', '🔀 Mixed'),
+    ]
+    
+    SEVERITY_CHOICES = [
+        ('low', 'Low Impact'),
+        ('medium', 'Medium Impact'),
+        ('high', 'High Impact'),
+        ('critical', 'Critical Impact'),
+    ]
+    
+    title = models.CharField(max_length=200, help_text="News headline")
+    content = models.TextField(help_text="Full news content/description")
+    
+    # Impact details
+    impact_direction = models.CharField(
+        max_length=10, 
+        choices=IMPACT_CHOICES, 
+        default='neutral',
+        help_text="Overall market impact direction"
+    )
+    severity = models.CharField(
+        max_length=10,
+        choices=SEVERITY_CHOICES,
+        default='medium',
+        help_text="How much this affects the market"
+    )
+    
+    # Affected entities
+    affected_sectors = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of sectors affected (e.g., ['Technology', 'Healthcare'])"
+    )
+    affected_stocks = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of specific stock symbols affected (e.g., ['AAPL', 'MSFT'])"
+    )
+    
+    # Hint for traders
+    trading_hint = models.TextField(
+        blank=True,
+        help_text="Optional hint for traders about how to react to this news"
+    )
+    
+    # Metadata
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether this news is currently visible to teams"
+    )
+    published_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When this news should stop being displayed (optional)"
+    )
+    
+    class Meta:
+        ordering = ['-published_at']
+        verbose_name = "Market News"
+        verbose_name_plural = "Market News"
+    
+    def __str__(self):
+        return f"{self.title} ({self.get_impact_direction_display()})"
+    
+    @property
+    def impact_emoji(self):
+        """Get emoji for impact direction"""
+        emojis = {
+            'positive': '📈',
+            'negative': '📉',
+            'neutral': '➡️',
+            'mixed': '🔀',
+        }
+        return emojis.get(self.impact_direction, '📰')
+    
+    @property
+    def severity_color(self):
+        """Get color for severity level"""
+        colors = {
+            'low': '#10b981',      # Green
+            'medium': '#f59e0b',   # Orange
+            'high': '#ef4444',     # Red
+            'critical': '#991b1b', # Dark Red
+        }
+        return colors.get(self.severity, '#6b7280')

@@ -1,0 +1,170 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}Custom Stock Price Control{% endblock %}
+
+{% block content %}
+<div style="max-width: 1400px; margin: 2rem auto; padding: 2rem;">
+    <h1 style="color: #1e40af; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
+        💰 Custom Stock Price Control
+    </h1>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+        <!-- Individual Price Control -->
+        <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+            <h2 style="color: #1e40af; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-size: 1.5rem;">🎯</span>
+                Individual Stock Prices
+            </h2>
+            
+            <form method="post" id="individualForm">
+                {% csrf_token %}
+                <input type="hidden" name="action_type" value="individual">
+                
+                <div style="max-height: 500px; overflow-y: auto; padding-right: 0.5rem;">
+                    {% for stock in stocks %}
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 700; color: #1e293b;">{{ stock.symbol }}</div>
+                                <div style="font-size: 0.85rem; color: #64748b;">{{ stock.name }}</div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.25rem;">{{ stock.sector }}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="font-size: 1.2rem; font-weight: 700; color: #64748b;">$</span>
+                                <input 
+                                    type="number" 
+                                    name="price_{{ stock.symbol }}" 
+                                    step="0.01" 
+                                    value="{{ stock.current_price }}"
+                                    style="width: 120px; padding: 0.5rem 0.75rem; font-size: 1rem; border: 2px solid #cbd5e1; border-radius: 6px; font-weight: 600;"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <button type="submit" 
+                        style="width: 100%; margin-top: 1.5rem; padding: 0.75rem; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;">
+                    💾 Save All Prices
+                </button>
+            </form>
+        </div>
+        
+        <!-- Bulk Percentage Change -->
+        <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+            <h2 style="color: #1e40af; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-size: 1.5rem;">📊</span>
+                Bulk Percentage Change
+            </h2>
+            
+            <form method="post" id="percentageForm">
+                {% csrf_token %}
+                <input type="hidden" name="action_type" value="percentage">
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; color: #1e293b; margin-bottom: 0.75rem;">
+                        Select Stocks:
+                    </label>
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0;">
+                        <div style="margin-bottom: 1rem;">
+                            <button type="button" onclick="selectAllStocks()" 
+                                    style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer; margin-right: 0.5rem;">
+                                Select All
+                            </button>
+                            <button type="button" onclick="deselectAllStocks()" 
+                                    style="padding: 0.5rem 1rem; background: #64748b; color: white; border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer;">
+                                Deselect All
+                            </button>
+                        </div>
+                        {% for stock in stocks %}
+                        <label style="display: flex; align-items: center; padding: 0.5rem; cursor: pointer; border-radius: 6px; transition: background 0.2s;" 
+                               onmouseover="this.style.background='#e0e7ff'" 
+                               onmouseout="this.style.background='transparent'">
+                            <input type="checkbox" name="stocks" value="{{ stock.symbol }}" style="margin-right: 0.75rem; width: 18px; height: 18px;">
+                            <span style="font-weight: 600; color: #1e293b;">{{ stock.symbol }}</span>
+                            <span style="margin-left: 0.5rem; color: #64748b; font-size: 0.9rem;">({{ stock.name }})</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="percentage" style="display: block; font-weight: 600; color: #1e293b; margin-bottom: 0.75rem;">
+                        Percentage Change:
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input 
+                            type="number" 
+                            name="percentage" 
+                            id="percentage" 
+                            step="0.01" 
+                            value="0"
+                            style="flex: 1; padding: 0.75rem 1rem; font-size: 1.1rem; border: 2px solid #cbd5e1; border-radius: 8px; font-weight: 600;"
+                            placeholder="e.g., 5 or -3"
+                        />
+                        <span style="font-size: 1.5rem; color: #3b82f6; font-weight: 700;">%</span>
+                    </div>
+                </div>
+                
+                <div style="background: #fef3c7; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #f59e0b;">
+                    <div style="color: #92400e; font-size: 0.9rem;">
+                        <strong>💡 Examples:</strong>
+                        <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+                            <li>+5% increase → Enter: 5</li>
+                            <li>-3% decrease → Enter: -3</li>
+                            <li>+10% increase → Enter: 10</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <button type="submit" 
+                        style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;">
+                    ✓ Apply to Selected
+                </button>
+            </form>
+            
+            <!-- Quick Actions -->
+            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e2e8f0;">
+                <h3 style="color: #64748b; font-size: 0.95rem; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Quick Actions
+                </h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <a href="{% url 'admin:stock_sector_control' %}" 
+                       style="padding: 0.75rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600; display: block;">
+                        🎯 Sector Control
+                    </a>
+                    <a href="{% url 'admin:app1_stock_changelist' %}" 
+                       style="padding: 0.75rem; background: #e2e8f0; color: #475569; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600; display: block;">
+                        ← Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectAllStocks() {
+    document.querySelectorAll('input[name="stocks"]').forEach(cb => cb.checked = true);
+}
+
+function deselectAllStocks() {
+    document.querySelectorAll('input[name="stocks"]').forEach(cb => cb.checked = false);
+}
+</script>
+
+<style>
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        transition: all 0.2s;
+    }
+    
+    input[type="number"]:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+</style>
+{% endblock %}

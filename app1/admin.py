@@ -1,13 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import users, Stock, SimulatorSettings, Event, Team
+from .models import users, Stock, SimulatorSettings, Event, Team, MarketNews
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils import timezone
 from django.shortcuts import render, redirect
 from django.urls import path
-
-# MarketEvent temporarily disabled - will be enabled after manual migration
 
 # Register your models here.
 # ₹
@@ -70,7 +68,7 @@ class CustomUserAdmin(UserAdmin):
             user.balance += 1000
             user.save()
         self.message_user(request, f'Added $1,000 bonus to {queryset.count()} user(s).')
-    add_bonus_1000.short_description = "Add $1,000 bonus"
+    add_bonus_1000.short_description = "Add 1000 dollar bonus"
 
     def add_bonus_5000(self, request, queryset):
         """Add $5000 bonus to selected users"""
@@ -78,61 +76,65 @@ class CustomUserAdmin(UserAdmin):
             user.balance += 5000
             user.save()
         self.message_user(request, f'Added $5,000 bonus to {queryset.count()} user(s).')
-    add_bonus_5000.short_description = "Add $5,000 bonus"
+    add_bonus_5000.short_description = "Add 5000 dollar bonus"
 
 
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
-    """Admin interface for controlling stock prices with simulation"""
-    list_display = ('symbol', 'name', 'sector', 'current_price', 'is_active')
-    list_filter = ('is_active',)
+    """Admin interface for managing stock prices with custom controls"""
+    list_display = ('symbol', 'name', 'sector', 'current_price_display', 'price_change_display', 'is_active')
+    list_filter = ('is_active', 'sector')
     search_fields = ('symbol', 'name')
     ordering = ('symbol',)
+    actions = ['apply_custom_percentage', 'adjust_sector_prices']
     
     readonly_fields = ('last_updated', 'created_at')
     
-    change_list_template = 'admin/app1/stock/change_list.html'
+    fieldsets = (
+        ('Stock Information', {
+            'fields': ('symbol', 'name', 'sector', 'is_active')
+        }),
+        ('Price Settings', {
+            'fields': ('current_price', 'previous_close', 'last_updated'),
+            'description': 'Manually set stock prices or use bulk actions below'
+        }),
+        ('Timestamps', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
     
-    actions = [
-        'apply_custom_percentage',
-        'sector_increase_5',
-        'sector_decrease_5',
-        'sector_increase_10',
-        'sector_decrease_10',
-    ]
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('custom-price-control/', self.admin_site.admin_view(self.custom_price_control), name='stock_custom_price_control'),
+            path('sector-control/', self.admin_site.admin_view(self.sector_control), name='stock_sector_control'),
+        ]
+        return custom_urls + urls
     
     def changelist_view(self, request, extra_context=None):
-        """Override changelist to clear old API-related messages"""
-        from django.contrib import messages
-        storage = messages.get_messages(request)
-        
-        # Clear any old messages about API failures
-        for message in storage:
-            if any(word in str(message) for word in ['Failed to fetch', 'Yahoo Finance', 'yfinance', 'API']):
-                pass  # Don't re-add this message
-        
-        storage.used = True  # Mark as used to clear
-        
+        extra_context = extra_context or {}
+        extra_context['custom_controls'] = True
         return super().changelist_view(request, extra_context)
     
     def current_price_display(self, obj):
         """Display current price formatted"""
-        return format_html('<strong style="color: #1e40af;">${:.2f}</strong>', obj.current_price)
+        return format_html('<strong style="color: #1e40af;">${}</strong>', f'{float(obj.current_price):.2f}')
     current_price_display.short_description = 'Current Price'
     
     def price_change_display(self, obj):
         """Display price change with color"""
-        change = obj.price_change
-        change_pct = obj.price_change_percent
+        change = float(obj.price_change)
+        change_pct = float(obj.price_change_percent)
         if change > 0:
             return format_html(
-                '<span style="color: green;">▲ +${:.2f} (+{:.2f}%)</span>',
-                change, change_pct
+                '<span style="color: green;">▲ +${} (+{}%)</span>',
+                f'{change:.2f}', f'{change_pct:.2f}'
             )
         elif change < 0:
             return format_html(
-                '<span style="color: red;">▼ ${:.2f} ({:.2f}%)</span>',
-                change, change_pct
+                '<span style="color: red;">▼ ${} ({}%)</span>',
+                f'{change:.2f}', f'{change_pct:.2f}'
             )
         return format_html('<span style="color: gray;">—</span>')
     price_change_display.short_description = 'Change'
@@ -140,186 +142,116 @@ class StockAdmin(admin.ModelAdmin):
     def apply_custom_percentage(self, request, queryset):
         """Apply custom percentage change to selected stocks"""
         if 'apply' in request.POST:
-            try:
-                from django.db import transaction
-                
-                percentage = float(request.POST.get('percentage', 0))
-                multiplier = 1 + (percentage / 100)
-                
-                updated_stocks = []
-                with transaction.atomic():
-                    for stock in queryset:
-                        stock.previous_close = float(stock.current_price)
-                        stock.current_price = round(float(stock.current_price) * multiplier, 2)
-                        updated_stocks.append(stock)
-                    
-                    # Bulk update for better performance
-                    if updated_stocks:
-                        Stock.objects.bulk_update(updated_stocks, ['previous_close', 'current_price'])
-                
-                self.message_user(request, f'✅ Applied {percentage:+.2f}% change to {queryset.count()} stock(s)')
-                return redirect('admin:app1_stock_changelist')
-            except ValueError:
-                self.message_user(request, '❌ Invalid percentage value', level='error')
-        
-        return render(request, 'admin/stock_custom_percentage.html', {
-            'stocks': queryset,
-            'title': 'Apply Custom Percentage Change'
-        })
-    # FIX: Escaped '%' to '%%'
-    apply_custom_percentage.short_description = "⚙️ Apply CUSTOM %% change"
-    
-    def sector_increase_5(self, request, queryset):
-        """Increase ALL stocks in selected sectors by 5%"""
-        from django.db import transaction
-        
-        sectors = queryset.values_list('sector', flat=True).distinct()
-        count = 0
-        updated_stocks = []
-        
-        with transaction.atomic():
-            for sector in sectors:
-                stocks = Stock.objects.filter(sector=sector, is_active=True)
-                for stock in stocks:
-                    stock.previous_close = float(stock.current_price)
-                    stock.current_price = round(float(stock.current_price) * 1.05, 2)
-                    updated_stocks.append(stock)
-                    count += 1
-            
-            # Bulk update for better performance
-            if updated_stocks:
-                Stock.objects.bulk_update(updated_stocks, ['previous_close', 'current_price'])
-        
-        self.message_user(request, f'✅ Increased {count} stocks in {len(sectors)} sector(s) by +5%: {", ".join(sectors)}')
-    # FIX: Escaped '%' to '%%'
-    sector_increase_5.short_description = "📊 Sector Rally +5%%"
-    
-    def sector_decrease_5(self, request, queryset):
-        """Decrease ALL stocks in selected sectors by 5%"""
-        from django.db import transaction
-        
-        sectors = queryset.values_list('sector', flat=True).distinct()
-        count = 0
-        updated_stocks = []
-        
-        with transaction.atomic():
-            for sector in sectors:
-                stocks = Stock.objects.filter(sector=sector, is_active=True)
-                for stock in stocks:
-                    stock.previous_close = float(stock.current_price)
-                    stock.current_price = round(float(stock.current_price) * 0.95, 2)
-                    updated_stocks.append(stock)
-                    count += 1
-            
-            # Bulk update for better performance
-            if updated_stocks:
-                Stock.objects.bulk_update(updated_stocks, ['previous_close', 'current_price'])
-        
-        self.message_user(request, f'✅ Decreased {count} stocks in {len(sectors)} sector(s) by -5%: {", ".join(sectors)}')
-    # FIX: Escaped '%' to '%%'
-    sector_decrease_5.short_description = "📉 Sector Crash -5%%"
-    
-    def sector_increase_10(self, request, queryset):
-        """Increase ALL stocks in selected sectors by 10%"""
-        from django.db import transaction
-        
-        sectors = queryset.values_list('sector', flat=True).distinct()
-        count = 0
-        updated_stocks = []
-        
-        with transaction.atomic():
-            for sector in sectors:
-                stocks = Stock.objects.filter(sector=sector, is_active=True)
-                for stock in stocks:
-                    stock.previous_close = float(stock.current_price)
-                    stock.current_price = round(float(stock.current_price) * 1.10, 2)
-                    updated_stocks.append(stock)
-                    count += 1
-            
-            # Bulk update for better performance
-            if updated_stocks:
-                Stock.objects.bulk_update(updated_stocks, ['previous_close', 'current_price'])
-        
-        self.message_user(request, f'✅ Increased {count} stocks in {len(sectors)} sector(s) by +10%: {", ".join(sectors)}')
-    # FIX: Escaped '%' to '%%'
-    sector_increase_10.short_description = "🚀 Major Sector Rally +10%%"
-    
-    def sector_decrease_10(self, request, queryset):
-        """Decrease ALL stocks in selected sectors by 10%"""
-        from django.db import transaction
-        
-        sectors = queryset.values_list('sector', flat=True).distinct()
-        count = 0
-        updated_stocks = []
-        
-        with transaction.atomic():
-            for sector in sectors:
-                stocks = Stock.objects.filter(sector=sector, is_active=True)
-                for stock in stocks:
-                    stock.previous_close = float(stock.current_price)
-                    stock.current_price = round(float(stock.current_price) * 0.90, 2)
-                    updated_stocks.append(stock)
-                    count += 1
-            
-            # Bulk update for better performance
-            if updated_stocks:
-                Stock.objects.bulk_update(updated_stocks, ['previous_close', 'current_price'])
-        
-        self.message_user(request, f'✅ Decreased {count} stocks in {len(sectors)} sector(s) by -10%: {", ".join(sectors)}')
-    # FIX: Escaped '%' to '%%'
-    sector_decrease_10.short_description = "💥 Major Sector Crash -10%%"
-    
-    def get_urls(self):
-        """Add custom admin URLs"""
-        urls = super().get_urls()
-        custom_urls = [
-            path('market-control/', self.admin_site.admin_view(self.market_control_view), name='stock_market_control'),
-            path('force-update-prices/', self.admin_site.admin_view(self.force_update_prices_view), name='stock_force_update'),
-        ]
-        return custom_urls + urls
-    
-    def force_update_prices_view(self, request):
-        """Force immediate price simulation update"""
-        from django.http import JsonResponse
-        import requests
-        
-        try:
-            # Call the simulation endpoint directly
-            response = requests.get(f"{request.scheme}://{request.get_host()}/api/update-prices-real", timeout=60)
-            data = response.json()
-            
-            if data.get('success'):
-                sentiment = data.get('market_sentiment', 'unknown')
-                self.message_user(request, f"✅ Simulated {data.get('updated_count', 0)} of {data.get('total_stocks', 0)} stocks! (Market: {sentiment})")
-            else:
-                self.message_user(request, f"❌ Simulation failed: {data.get('error', 'Unknown error')}", level='error')
-        except Exception as e:
-            self.message_user(request, f"❌ Simulation failed: {str(e)}", level='error')
-        
-        return redirect('admin:app1_stock_changelist')
-    
-    def market_control_view(self, request):
-        """Market control panel view"""
-        from .models import SimulatorSettings
-        
-        # Get current mode
-        try:
-            setting = SimulatorSettings.objects.get(setting_name='use_real_prices')
-            use_real = setting.setting_value.lower() == 'true'
-        except SimulatorSettings.DoesNotExist:
-            use_real = False
-        
-        # Get unique sectors, filtering out None/empty values
-        sectors = Stock.objects.filter(is_active=True, sector__isnull=False).exclude(sector='').values_list('sector', flat=True).distinct()
-        sectors = sorted(set(sectors))  # Sort in Python to avoid comparison issues
+            percentage = float(request.POST.get('percentage', 0))
+            count = 0
+            for stock in queryset:
+                stock.previous_close = float(stock.current_price)
+                stock.current_price = float(stock.current_price) * (1 + percentage / 100)
+                stock.save()
+                count += 1
+            self.message_user(request, f'Applied {percentage:+.2f}% change to {count} stock(s).')
+            return redirect('admin:app1_stock_changelist')
         
         context = {
-            'title': 'Market Control Center',
-            'use_real_prices': use_real,
-            'stocks': Stock.objects.filter(is_active=True),
-            'sectors': sectors,
+            'stocks': queryset,
+            'action_name': 'apply_custom_percentage',
+            'title': 'Apply Custom Percentage Change'
         }
-        return render(request, 'admin/market_control.html', context)
+        return render(request, 'admin/stock_custom_percentage.html', context)
+    
+    apply_custom_percentage.short_description = "Apply custom percentage change"
+    
+    def adjust_sector_prices(self, request, queryset):
+        """Redirect to sector-based control panel"""
+        return redirect('admin:stock_sector_control')
+    
+    adjust_sector_prices.short_description = "Adjust prices by sector"
+    
+    def custom_price_control(self, request):
+        """Custom price control interface"""
+        stocks = Stock.objects.all()
+        
+        if request.method == 'POST':
+            action_type = request.POST.get('action_type')
+            
+            if action_type == 'individual':
+                for stock in stocks:
+                    new_price = request.POST.get(f'price_{stock.symbol}')
+                    if new_price:
+                        try:
+                            stock.previous_close = float(stock.current_price)
+                            stock.current_price = float(new_price)
+                            stock.save()
+                        except ValueError:
+                            pass
+                self.message_user(request, 'Individual stock prices updated successfully.')
+                
+            elif action_type == 'percentage':
+                percentage = float(request.POST.get('percentage', 0))
+                selected = request.POST.getlist('stocks')
+                count = 0
+                for symbol in selected:
+                    try:
+                        stock = Stock.objects.get(symbol=symbol)
+                        stock.previous_close = float(stock.current_price)
+                        stock.current_price = float(stock.current_price) * (1 + percentage / 100)
+                        stock.save()
+                        count += 1
+                    except Stock.DoesNotExist:
+                        pass
+                self.message_user(request, f'Applied {percentage:+.2f}% to {count} stock(s).')
+            
+            return redirect('admin:app1_stock_changelist')
+        
+        context = {
+            'stocks': stocks,
+            'sectors': Stock.objects.values_list('sector', flat=True).distinct(),
+            'title': 'Custom Stock Price Control',
+            'site_title': 'Stock Administration',
+            'has_permission': True,
+        }
+        return render(request, 'admin/stock_price_control.html', context)
+    
+    def sector_control(self, request):
+        """Sector-based price adjustment interface"""
+        sectors = Stock.objects.values_list('sector', flat=True).distinct().order_by('sector')
+        
+        if request.method == 'POST':
+            for sector in sectors:
+                percentage_key = f'percentage_{sector}'
+                percentage = request.POST.get(percentage_key)
+                
+                if percentage:
+                    try:
+                        percentage = float(percentage)
+                        stocks = Stock.objects.filter(sector=sector)
+                        for stock in stocks:
+                            stock.previous_close = float(stock.current_price)
+                            stock.current_price = float(stock.current_price) * (1 + percentage / 100)
+                            stock.save()
+                    except ValueError:
+                        pass
+            
+            self.message_user(request, 'Sector prices updated successfully.')
+            return redirect('admin:app1_stock_changelist')
+        
+        # Get stock counts by sector
+        sector_data = []
+        for sector in sectors:
+            stock_count = Stock.objects.filter(sector=sector).count()
+            sector_data.append({
+                'name': sector,
+                'count': stock_count,
+                'stocks': Stock.objects.filter(sector=sector)
+            })
+        
+        context = {
+            'sector_data': sector_data,
+            'title': 'Sector-Based Price Control',
+            'site_title': 'Stock Administration',
+            'has_permission': True,
+        }
+        return render(request, 'admin/stock_sector_control.html', context)
 
 
 @admin.register(SimulatorSettings)
@@ -572,11 +504,100 @@ class TeamAdmin(admin.ModelAdmin):
     activate_team.short_description = "Activate teams"
 
 
-# MarketEventAdmin temporarily disabled - will be added after migrations run
-# See PRICE_SIMULATION_GUIDE.md for configuration details
+@admin.register(MarketNews)
+class MarketNewsAdmin(admin.ModelAdmin):
+    """Admin interface for managing market news and events"""
+    list_display = ('title', 'impact_badge', 'severity_badge', 'affected_display', 'published_at', 'is_active')
+    list_filter = ('is_active', 'impact_direction', 'severity', 'published_at')
+    search_fields = ('title', 'content', 'trading_hint')
+    ordering = ('-published_at',)
+    
+    fieldsets = (
+        ('News Content', {
+            'fields': ('title', 'content', 'trading_hint')
+        }),
+        ('Market Impact', {
+            'fields': ('impact_direction', 'severity'),
+            'description': 'Define how this news affects the market'
+        }),
+        ('Affected Entities', {
+            'fields': ('affected_sectors', 'affected_stocks'),
+            'description': 'Select which sectors/stocks are affected. Leave empty for market-wide news.'
+        }),
+        ('Visibility', {
+            'fields': ('is_active', 'expires_at'),
+            'description': 'Control when and if this news is visible to teams'
+        }),
+    )
+    
+    readonly_fields = ('published_at',)
+    
+    def impact_badge(self, obj):
+        """Display impact with emoji and color"""
+        colors = {
+            'positive': '#10b981',
+            'negative': '#ef4444',
+            'neutral': '#6b7280',
+            'mixed': '#f59e0b',
+        }
+        color = colors.get(obj.impact_direction, '#6b7280')
+        return format_html(
+            '<span style="background: {}; color: white; padding: 4px 12px; border-radius: 12px; font-weight: bold;">{} {}</span>',
+            color,
+            obj.impact_emoji,
+            obj.get_impact_direction_display()
+        )
+    impact_badge.short_description = 'Impact'
+    
+    def severity_badge(self, obj):
+        """Display severity with color coding"""
+        return format_html(
+            '<span style="background: {}; color: white; padding: 4px 12px; border-radius: 12px; font-weight: bold;">{}</span>',
+            obj.severity_color,
+            obj.get_severity_display()
+        )
+    severity_badge.short_description = 'Severity'
+    
+    def affected_display(self, obj):
+        """Display what's affected in a readable format"""
+        parts = []
+        if obj.affected_sectors:
+            parts.append(f"{len(obj.affected_sectors)} sector(s)")
+        if obj.affected_stocks:
+            parts.append(f"{len(obj.affected_stocks)} stock(s)")
+        if not parts:
+            return format_html('<span style="color: #6b7280;">Market-wide</span>')
+        return format_html('<span style="color: #6366f1;">{}</span>', ', '.join(parts))
+    affected_display.short_description = 'Affects'
+    
+    actions = ['activate_news', 'deactivate_news', 'extend_expiry']
+    
+    def activate_news(self, request, queryset):
+        """Activate selected news items"""
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} news item(s) activated!')
+    activate_news.short_description = "✅ Activate news"
+    
+    def deactivate_news(self, request, queryset):
+        """Deactivate selected news items"""
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} news item(s) deactivated!')
+    deactivate_news.short_description = "❌ Deactivate news"
+    
+    def extend_expiry(self, request, queryset):
+        """Extend expiry by 24 hours"""
+        from datetime import timedelta
+        for news in queryset:
+            if news.expires_at:
+                news.expires_at += timedelta(hours=24)
+            else:
+                news.expires_at = timezone.now() + timedelta(hours=24)
+            news.save()
+        self.message_user(request, f'Extended expiry for {queryset.count()} news item(s) by 24 hours!')
+    extend_expiry.short_description = "⏰ Extend expiry +24h"
 
 
 # Customize admin site headers
-admin.site.site_header = "TradeSim Market Control Center"
-admin.site.site_title = "TradeSim Admin"
+admin.site.site_header = "TradeWars Market Control Center"
+admin.site.site_title = "TradeWars Admin"
 admin.site.index_title = "Market Control Dashboard"

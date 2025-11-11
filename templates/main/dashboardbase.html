@@ -3,55 +3,6 @@
 {% block website %}
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const searchInput = document.getElementById('search-navbar2');
-        const searchResults = document.getElementById('search-results');
-        let timeoutId;
-
-        searchInput.addEventListener('keyup', (event) => {
-            clearTimeout(timeoutId); // Clear previous timeout
-
-            // Set a new timeout to fetch data after 500 milliseconds (0.5 seconds)
-            timeoutId = setTimeout(async () => {
-                const query = event.target.value.trim();
-
-                if (query.length > 0) {
-                    let response = await fetch(`/api/search/${query}`);
-                    const data = await response.json();
-                    // console.log(data);
-                    // console.log(data.stocks.length);
-
-                    // Clear previous results
-                    searchResults.innerHTML = '';
-
-                    // Loop through each stock and display its symbol and shortname
-                    for (let i = 0; i < data.stocks.length; i++) {
-                        const stock = data.stocks[i];
-                        const resultItem = document.createElement('li');
-                        resultItem.classList.add('block', 'px-4', 'py-2', 'text-sm', 'text-gray-700', 'hover:bg-gray-100', 'dark:hover:bg-gray-600', 'dark:text-gray-200', 'dark:hover:text-white');
-
-                        // Create a hyperlink element with dynamically fetched link
-                        const link = document.createElement('a');
-                        link.href = "/details/"+stock.symbol; // Assuming 'link' is the key in the API response containing the link
-                        link.textContent = stock.symbol + ' ' + stock.shortname;
-
-                        // Append the hyperlink element to the result item
-                        resultItem.appendChild(link);
-
-                        // Append the result item to the search results list
-                        searchResults.appendChild(resultItem);
-                    }
-                } else {
-                    // Clear dropdown list when search query is empty
-                    searchResults.innerHTML = '';
-                }
-            }, 430); // 500 milliseconds delay
-        });
-    });
-
-</script>
-
-<script>
     function fetchData() {
         var watchquery = "{{query}}";
         fetch(`/api/incomecalculate`)
@@ -271,71 +222,6 @@
 </aside>
 
 <div class="sm:ml-64">
-    <nav class="bg-gray-900 border-gray-200 dark:bg-gray-800 hidden md:block">
-        <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto pb-2 pt-2">
-            <div class="flex-auto justify-center items-center">
-                <div class="relative hidden md:block w-96 mx-auto md:block">
-                    <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                        <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
-                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-                        </svg>
-                        <span class="sr-only">Search icon</span>
-                    </div>
-                    <input type="text" id="search-navbar2"
-                        class="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        aria-expanded="false" data-dropdown-toggle="search-results" data-dropdown-placement="bottom"
-                        placeholder="Search...">
-                    <div class="dropdown-content hidden z-50 my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600"
-                        id="search-results" style="position: absolute; top: calc(100% + 10px); left: 0; width: 100%;">
-                        <ul class="py-2" aria-labelledby="search-navbar2">
-                            <!-- Search results will be populated dynamically here -->
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex items-center md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
-                <button type="button"
-                    class="flex text-sm bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-                    id="user-menu-button" aria-expanded="false" data-dropdown-toggle="user-dropdown"
-                    data-dropdown-placement="bottom">
-                    <span class="sr-only">Open user menu</span>
-                    <img class="w-8 h-8 rounded-full"
-                        src="https://www.flowbite.com/docs/images/people/profile-picture-3.jpg" alt="user photo">
-                </button>
-                <!-- Dropdown menu -->
-                <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600"
-                    id="user-dropdown">
-                    <div class="px-4 py-3">
-                        <span class="block text-sm text-gray-900 dark:text-white">Hello, {{name}}</span>
-                        <span class="block text-sm  text-gray-500 truncate dark:text-gray-400">{{email}}</span>
-                    </div>
-                    <ul class="py-2" aria-labelledby="user-menu-button">
-                        <li>
-                            <a href="/dashboard"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Dashboard</a>
-                        </li>
-                        <li>
-                            <a href="/settings"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Settings</a>
-                        </li>
-                        <li>
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Earnings</a>
-                        </li>
-                        <li>
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Sign
-                                out</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <hr class="border-gray-200 sm:mx-auto dark:border-gray-700" />
-    </nav>
     {% block dashboard %}
     {% endblock %}
 </div>

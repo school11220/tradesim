@@ -32,6 +32,9 @@ def search(request,query):
 # print(search("apple"))
 
 def watchlist(request, query):
+    # Handle empty query
+    if not query or query.strip() == "" or query.strip() == ",":
+        return JsonResponse({"stocks": [], "message": "No stocks provided"})
 
     response_step1 = requests.get("https://fc.yahoo.com")
     cookie = response_step1.headers.get('Set-Cookie')
@@ -117,6 +120,11 @@ def portfolio(request):
     user=request.user
     stocks=user.stockbuy
     name=list(stocks.keys())
+    
+    # Handle empty portfolio
+    if not name:
+        return JsonResponse({"portfolio": [], "message": "No stocks in portfolio"})
+    
     print(name[0])
     print(name)
     stocksname=""
@@ -154,6 +162,11 @@ def income(request):
     stocks=user.stockbuy
     price=[]
     name=list(stocks.keys())
+    
+    # Handle empty portfolio
+    if not name:
+        return JsonResponse({"income": 0, "message": "No stocks in portfolio"})
+    
     stocksname=""
     for i in range(len(name)-1,-1,-1):
         # print(i)
@@ -163,8 +176,20 @@ def income(request):
     url="http://127.0.0.1:8000/api/watchlist/"+stocksname
     headers={"User-Agent": "Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"}
     response = requests.get(url,headers=headers)
-    data = response.json()
+    
+    # Handle empty or invalid response
+    try:
+        data = response.json()
+    except Exception as e:
+        print(f"Error parsing JSON: {e}")
+        return JsonResponse({"income": 0, "error": "Failed to fetch stock data"})
+    
     storepl=0
+    
+    # Handle missing or empty stocks data
+    if "stocks" not in data or not data["stocks"]:
+        return JsonResponse({"income": 0, "message": "No stock data available"})
+    
     print(data["stocks"][0])
     for i in range(0,len(name)):
         investedamount=user.stockbuy[name[i]]["averageprice"]*user.stockbuy[name[i]]["quantity"]
@@ -176,6 +201,10 @@ def income(request):
     return HttpResponse(round(storepl,2))
 
 def holdings(request,query):
+    # Handle empty query
+    if not query or query.strip() == "":
+        return HttpResponse(0)
+    
     # print("---------------Holdings-----------------")
     # print(query)
     # print("---------------Holdings-----------------")
@@ -273,18 +302,14 @@ def trigger_price_update(request):
 
 def update_prices_real(request):
     """
-    REALISTIC STOCK PRICE SIMULATION
-    Simulates realistic price movements without external API calls.
-    Features:
-    - Market sentiment (bullish/bearish/neutral)
-    - Sector-based correlations
-    - Realistic volatility (0.5-2% per update)
-    - Price bounds and safety limits
+    Fetch REAL stock prices from Yahoo Finance API using yfinance
+    Updates all active stocks with current market prices
     """
     from app1.models import Stock
-    from datetime import datetime
+    import yfinance as yf
     import logging
-    import random
+    from django.utils import timezone
+    from datetime import datetime
     from decimal import Decimal
     
     logger = logging.getLogger(__name__)
@@ -298,98 +323,114 @@ def update_prices_real(request):
                 'error': 'No active stocks found'
             })
         
-        # Determine market sentiment for this update cycle
-        market_sentiments = ['neutral', 'bullish', 'bearish']
-        sentiment_weights = [0.60, 0.20, 0.20]  # 60% neutral, 20% bullish, 20% bearish
-        market_sentiment = random.choices(market_sentiments, weights=sentiment_weights)[0]
-        
-        # Market drift based on sentiment
-        if market_sentiment == 'bullish':
-            market_drift = random.uniform(0.1, 0.5)  # 0.1-0.5% upward bias
-        elif market_sentiment == 'bearish':
-            market_drift = random.uniform(-0.5, -0.1)  # 0.1-0.5% downward bias
-        else:
-            market_drift = random.uniform(-0.1, 0.1)  # Neutral
-        
-        # Group stocks by sector for correlation
-        sectors = {}
-        for stock in stocks:
-            sector = stock.sector or 'Other'
-            if sector not in sectors:
-                sectors[sector] = {
-                    'trend': random.uniform(-1.0, 1.0),  # Sector-specific trend
-                    'stocks': []
-                }
-            sectors[sector]['stocks'].append(stock)
-        
         updated_count = 0
+        failed_count = 0
         updates = []
         
-        logger.info(f"Starting realistic simulation for {stocks.count()} stocks (Sentiment: {market_sentiment})")
+        # Get all symbols
+        symbols = [stock.symbol for stock in stocks]
         
-        for stock in stocks:
-            old_price = float(stock.current_price)
-            
-            # Get sector trend
-            sector = stock.sector or 'Other'
-            sector_trend = sectors[sector]['trend']
-            
-            # Base volatility: 0.5% to 2% per update
-            base_volatility = random.uniform(0.5, 2.0)
-            
-            # Combine market drift, sector trend, and random volatility
-            total_change = market_drift + (sector_trend * 0.3) + random.gauss(0, base_volatility)
-            
-            # Calculate new price
-            new_price = old_price * (1 + total_change / 100)
-            
-            # Apply safety limits
-            # 1. Price bounds: $1 minimum, $50,000 maximum
-            new_price = max(1.0, min(50000.0, new_price))
-            
-            # 2. Max single update change: ±15%
-            max_change = old_price * 0.15
-            if new_price > old_price + max_change:
-                new_price = old_price + max_change
-            elif new_price < old_price - max_change:
-                new_price = old_price - max_change
-            
-            # Round to 2 decimal places
-            new_price = round(new_price, 2)
-            
-            # Update stock
-            stock.previous_close = Decimal(str(old_price))
-            stock.current_price = Decimal(str(new_price))
-            stock.last_updated = datetime.now()
-            stock.save()
-            
-            change = new_price - old_price
-            change_pct = (change / old_price) * 100 if old_price > 0 else 0
-            
-            updates.append({
-                'symbol': stock.symbol,
-                'old_price': round(old_price, 2),
-                'new_price': round(new_price, 2),
-                'change': round(change, 2),
-                'change_percent': round(change_pct, 2)
-            })
-            updated_count += 1
+        logger.info(f"Fetching real prices for {len(symbols)} stocks from Yahoo Finance")
         
-        logger.info(f"Simulation complete: {updated_count}/{len(stocks)} stocks updated")
+        # Use yf.download() which is more efficient and less prone to rate limiting
+        import time
+        try:
+            # Download data for all stocks in one batch (more efficient than Tickers)
+            # Use a shorter period to reduce data transfer
+            data = yf.download(
+                tickers=' '.join(symbols),
+                period='1d',
+                interval='1d',
+                group_by='ticker',
+                auto_adjust=True,
+                prepost=False,
+                threads=True,
+                progress=False
+            )
+            
+            for stock in stocks:
+                try:
+                    symbol = stock.symbol
+                    
+                    # Handle single vs multiple tickers
+                    if len(symbols) == 1:
+                        stock_data = data
+                    else:
+                        stock_data = data[symbol] if symbol in data else None
+                    
+                    if stock_data is not None and not stock_data.empty:
+                        # Get the most recent price
+                        current_price = float(stock_data['Close'].iloc[-1])
+                        previous_close = float(stock_data['Open'].iloc[-1]) if len(stock_data) > 1 else float(stock.previous_close)
+                        
+                        if current_price and current_price > 0:
+                            old_price = float(stock.current_price)
+                            
+                            # Update stock
+                            stock.previous_close = Decimal(str(previous_close))
+                            stock.current_price = Decimal(str(current_price))
+                            stock.last_updated = timezone.now()
+                            stock.save()
+                            
+                            change = current_price - old_price
+                            change_pct = (change / old_price) * 100 if old_price > 0 else 0
+                            
+                            updates.append({
+                                'symbol': stock.symbol,
+                                'old_price': round(old_price, 2),
+                                'new_price': round(current_price, 2),
+                                'change': round(change, 2),
+                                'change_percent': round(change_pct, 2)
+                            })
+                            updated_count += 1
+                            
+                            logger.debug(f"{stock.symbol}: ${old_price:.2f} → ${current_price:.2f}")
+                        else:
+                            logger.warning(f"No valid price for {stock.symbol}")
+                            failed_count += 1
+                    else:
+                        logger.warning(f"No data available for {stock.symbol}")
+                        failed_count += 1
+                        
+                except Exception as e:
+                    logger.error(f"Error updating {stock.symbol}: {str(e)}")
+                    failed_count += 1
+                    continue
+            
+            # Small delay to be respectful to Yahoo's servers
+            time.sleep(0.5)
+        
+        except Exception as e:
+            logger.error(f"Error fetching data from Yahoo Finance: {str(e)}")
+            # If rate limited, return info about it
+            if "429" in str(e) or "Too Many Requests" in str(e):
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Rate limited by Yahoo Finance. Please wait a few minutes and try again.',
+                    'tip': 'For events, consider using simulated prices to avoid rate limits.',
+                    'updated_count': updated_count,
+                    'failed_count': failed_count
+                }, status=429)
+            return JsonResponse({
+                'success': False,
+                'error': f'Failed to fetch data from Yahoo Finance: {str(e)}'
+            }, status=500)
+        
+        logger.info(f"Update complete: {updated_count} updated, {failed_count} failed")
         
         return JsonResponse({
             'success': True,
-            'mode': 'realistic_simulation',
-            'market_sentiment': market_sentiment,
+            'mode': 'real_api_prices',
             'updated_count': updated_count,
+            'failed_count': failed_count,
             'total_stocks': len(stocks),
             'timestamp': datetime.now().isoformat(),
-            'updates': updates[:15],
-            'message': f'Successfully simulated {updated_count} stock prices (Market: {market_sentiment})'
+            'updates': updates[:15],  # Show first 15 updates
+            'message': f'Successfully updated {updated_count} stocks from Yahoo Finance API'
         })
         
     except Exception as e:
-        logger.error(f"Fatal error in simulation: {str(e)}")
+        logger.error(f"Fatal error in price update: {str(e)}")
         return JsonResponse({
             'success': False,
             'error': str(e)
@@ -454,58 +495,7 @@ def toggle_price_mode(request):
         }, status=500)
 
 
-def adjust_sector(request):
-    """
-    API endpoint to adjust prices for an entire sector by custom percentage
-    """
-    from app1.models import Stock
-    import json
-    
-    if not request.user.is_staff:
-        return JsonResponse({
-            'success': False,
-            'error': 'Admin access required'
-        }, status=403)
-    
-    try:
-        data = json.loads(request.body)
-        sector = data.get('sector')
-        percentage = float(data.get('percentage', 0))
-        
-        if not sector:
-            return JsonResponse({
-                'success': False,
-                'error': 'Sector is required'
-            }, status=400)
-        
-        stocks = Stock.objects.filter(sector=sector, is_active=True)
-        
-        if not stocks.exists():
-            return JsonResponse({
-                'success': False,
-                'error': f'No active stocks found in {sector} sector'
-            }, status=404)
-        
-        multiplier = 1 + (percentage / 100)
-        
-        for stock in stocks:
-            stock.previous_close = float(stock.current_price)
-            stock.current_price = round(float(stock.current_price) * multiplier, 2)
-            stock.save()
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Adjusted {stocks.count()} stocks in {sector} sector by {percentage:+.2f}%',
-            'sector': sector,
-            'percentage': percentage,
-            'stocks_affected': stocks.count()
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+# Market News and Events System will be added here
 
 
 def get_market_events(request):

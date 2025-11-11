@@ -347,7 +347,7 @@
 <div class="container">
     <!-- Header -->
     <div class="page-header">
-        <h1 class="page-title">📈 TradeSim - Browse Stocks</h1>
+        <h1 class="page-title">⚔️ TradeWars - Browse Stocks</h1>
         <p class="page-subtitle">{{ team_name}} ({{ team_code }})</p>
         
         <div class="header-stats">
@@ -572,6 +572,11 @@
     
     // Auto-refresh every 15 seconds
     refreshInterval = setInterval(refreshPrices, 15000);
+    
+    // Initial refresh on page load after 1 second
+    setTimeout(() => {
+        refreshPrices();
+    }, 1000);
     
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {

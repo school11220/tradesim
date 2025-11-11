@@ -13,6 +13,46 @@
 .messagelist .success {
     display: block !important;
 }
+
+.custom-controls {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.5rem;
+    margin: 1rem 0;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.control-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: white;
+    color: #1e293b;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.control-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    color: #1e293b;
+}
+
+.control-btn span {
+    font-size: 1.5rem;
+}
 </style>
 
 <script>
@@ -39,8 +79,56 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 
 {% block content %}
-<div style="background: #10b981; color: white; padding: 15px; margin: 10px 0; border-radius: 5px; text-align: center;">
-    <strong>🎲 Realistic Market Simulation Active</strong> - Stock prices update automatically with market sentiment and sector correlations
+<div class="custom-controls">
+    <h2 style="color: white; margin: 0 0 0.5rem 0; font-size: 1.5rem; font-weight: 700;">
+        💰 Custom Stock Price Controls
+    </h2>
+    <p style="color: rgba(255,255,255,0.9); margin: 0 0 1rem 0;">
+        Adjust stock prices using percentage changes or sector-based controls
+    </p>
+    <div class="controls-grid">
+        <a href="{% url 'admin:stock_custom_price_control' %}" class="control-btn">
+            <span>🎯</span>
+            <div>
+                <div style="font-size: 1rem;">Individual Prices</div>
+                <div style="font-size: 0.8rem; color: #64748b;">Set exact prices</div>
+            </div>
+        </a>
+        <a href="{% url 'admin:stock_sector_control' %}" class="control-btn">
+            <span>🎯</span>
+            <div>
+                <div style="font-size: 1rem;">Sector Control</div>
+                <div style="font-size: 0.8rem; color: #64748b;">Adjust by sector</div>
+            </div>
+        </a>
+        <a href="#" onclick="openBulkPercentage(); return false;" class="control-btn">
+            <span>📊</span>
+            <div>
+                <div style="font-size: 1rem;">Bulk Percentage</div>
+                <div style="font-size: 0.8rem; color: #64748b;">Select stocks below</div>
+            </div>
+        </a>
+    </div>
 </div>
+
+<div style="background: #10b981; color: white; padding: 15px; margin: 10px 0; border-radius: 5px; text-align: center;">
+    <strong>📈 Real-Time Market Data</strong> - Stock prices update automatically from Yahoo Finance API
+</div>
+
+<script>
+function openBulkPercentage() {
+    const form = document.querySelector('form');
+    const checkedBoxes = form.querySelectorAll('input[name="_selected_action"]:checked');
+    
+    if (checkedBoxes.length === 0) {
+        alert('Please select at least one stock using the checkboxes on the left.');
+        return;
+    }
+    
+    form.querySelector('select[name="action"]').value = 'apply_custom_percentage';
+    form.submit();
+}
+</script>
+
 {{ block.super }}
 {% endblock %}

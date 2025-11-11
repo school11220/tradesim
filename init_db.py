@@ -3,6 +3,13 @@ Quick database initialization script
 Run this to populate the database with initial data
 """
 
+import os
+import django
+
+# Setup Django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'demostocks.settings')
+django.setup()
+
 from app1.models import Stock, SimulatorSettings, Event
 from django.utils import timezone
 from datetime import timedelta
@@ -87,7 +94,7 @@ def init_database():
     if setting_count == 0:
         print("⚙️  Creating simulator settings...")
         SimulatorSettings.objects.create(
-            setting_key='default_user_balance',
+            setting_name='default_user_balance',
             setting_value='10000.0',
             description='Default starting balance for new user accounts'
         )
