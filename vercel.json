@@ -4,12 +4,6 @@
   "rewrites": [
     { "source": "/(.*)", "destination": "/api/wsgi" }
   ],
-  "crons": [
-    {
-      "path": "/api/update-prices-real",
-      "schedule": "*/5 * * * *"
-    }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
