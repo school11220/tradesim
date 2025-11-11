@@ -20,6 +20,10 @@ python manage.py migrate --noinput 2>&1 || echo "⚠️  Some migrations already
 echo "🔍 Verifying MarketNews table..."
 python create_marketnews_table.py 2>&1 || echo "⚠️  MarketNews table check completed"
 
+# Add Indian stocks to database
+echo "🇮🇳 Adding Indian stocks..."
+python manage.py add_indian_stocks 2>&1 || echo "⚠️  Indian stocks command completed"
+
 # Collect static files
 echo "📦 Collecting static files..."
 python manage.py collectstatic --noinput
