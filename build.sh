@@ -24,6 +24,10 @@ python create_marketnews_table.py 2>&1 || echo "⚠️  MarketNews table check c
 echo "🇮🇳 Adding Indian stocks..."
 python manage.py add_indian_stocks 2>&1 || echo "⚠️  Indian stocks command completed"
 
+# Convert US stock prices to INR
+echo "💱 Converting USD prices to INR..."
+python manage.py convert_usd_to_inr 2>&1 || echo "⚠️  USD to INR conversion completed"
+
 # Collect static files
 echo "📦 Collecting static files..."
 python manage.py collectstatic --noinput
