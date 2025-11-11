@@ -992,6 +992,26 @@ def team_news(request):
         request.session.flush()
         return redirect('team_login')
     except Exception as e:
-        from django.contrib import messages
-        messages.error(request, f"Error loading news: {str(e)}")
-        return redirect('team_dashboard')
+        # Log the error for debugging
+        import traceback
+        print(f"Error in team_news view: {str(e)}")
+        print(traceback.format_exc())
+        
+        # Still show the news page with empty news list
+        try:
+            team_id = request.session.get('team_id')
+            team = Team.objects.get(id=team_id)
+            data = {
+                'team': team,
+                'team_code': team.team_code,
+                'team_name': team.team_name,
+                'news_list': [],
+                'news_count': 0,
+                'event': team.event,
+                'title': 'Market News'
+            }
+            return render(request, "main/team_news.html", data)
+        except:
+            from django.contrib import messages
+            messages.error(request, f"Error loading news: {str(e)}")
+            return redirect('team_dashboard')
