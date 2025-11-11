@@ -73,31 +73,39 @@ indian_stocks = [
 print("Adding Indian stocks to the database...")
 added = 0
 updated = 0
+skipped = 0
 
 for stock_data in indian_stocks:
     import random
-    # Add random price variation to show changes (-2% to +2%)
-    current_price = stock_data["price"]
-    # Create variation in previous_close (2% to 5% difference)
-    variation = random.uniform(0.97, 1.05)  # 97% to 105% of current price
-    previous_close = current_price * variation
     
-    stock, created = Stock.objects.update_or_create(
-        symbol=stock_data["symbol"],
-        defaults={
-            "name": stock_data["name"],
-            "sector": stock_data["sector"],
-            "current_price": round(current_price, 2),
-            "previous_close": round(previous_close, 2),
-            "is_active": True
-        }
-    )
-    if created:
+    # Check if stock already exists
+    try:
+        existing_stock = Stock.objects.get(symbol=stock_data["symbol"])
+        # Stock exists, skip to preserve current prices
+        skipped += 1
+        print(f"⏭️  Skipped (exists): {existing_stock.symbol} @ ₹{existing_stock.current_price}")
+        continue
+    except Stock.DoesNotExist:
+        # Stock doesn't exist, create it with variation
+        current_price = stock_data["price"]
+        # Create variation in previous_close (3% to 5% difference)
+        variation = random.uniform(0.95, 1.05)  # 95% to 105% of current price
+        previous_close = current_price * variation
+        
+        stock = Stock.objects.create(
+            symbol=stock_data["symbol"],
+            name=stock_data["name"],
+            sector=stock_data["sector"],
+            current_price=round(current_price, 2),
+            previous_close=round(previous_close, 2),
+            is_active=True
+        )
         added += 1
-        print(f"✅ Added: {stock.symbol} - {stock.name} @ ₹{stock.current_price}")
-    else:
-        updated += 1
-        print(f"🔄 Updated: {stock.symbol} - {stock.name} @ ₹{stock.current_price}")
+        
+        change = stock.current_price - stock.previous_close
+        change_pct = (change / stock.previous_close * 100) if stock.previous_close > 0 else 0
+        
+        print(f"✅ Added: {stock.symbol} - {stock.name} @ ₹{stock.current_price} ({"+" if change >= 0 else ""}{change_pct:.2f}%)")
 
-print(f"\n✅ Complete! Added {added} new stocks, updated {updated} existing stocks.")
-print(f"Total Indian stocks in database: {len(indian_stocks)}")
+print(f"\n✅ Complete! Added {added} new stocks, skipped {skipped} existing stocks.")
+print(f"Total Indian stocks in database: {Stock.objects.filter(symbol__in=[s['symbol'] for s in indian_stocks]).count()}")
