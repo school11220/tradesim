@@ -76,13 +76,20 @@ class Command(BaseCommand):
         updated = 0
 
         for stock_data in indian_stocks:
+            import random
+            # Add random price variation to show changes (-3% to +3%)
+            current_price = stock_data["price"]
+            # Create variation in previous_close (2% to 5% difference)
+            variation = random.uniform(0.97, 1.05)  # 97% to 105% of current price
+            previous_close = current_price * variation
+            
             stock, created = Stock.objects.update_or_create(
                 symbol=stock_data["symbol"],
                 defaults={
                     "name": stock_data["name"],
                     "sector": stock_data["sector"],
-                    "current_price": stock_data["price"],
-                    "previous_close": stock_data["price"],
+                    "current_price": round(current_price, 2),
+                    "previous_close": round(previous_close, 2),
                     "is_active": True
                 }
             )
