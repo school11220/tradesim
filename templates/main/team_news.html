@@ -1,22 +1,9 @@
-{% extends 'main/team_base.html' %}
+{% extends 'main/team_base_new.html' %}
 
 {% block title %}TradeWars - Market News{% endblock %}
 
 {% block extra_css %}
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        color: #1e293b;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        min-height: 100vh;
-    }
-
     .news-container {
         max-width: 1600px;
         margin: 0 auto;
@@ -35,22 +22,6 @@
         overflow: hidden;
     }
 
-    .news-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
-        animation: shimmer 3s infinite;
-    }
-
-    @keyframes shimmer {
-        0%, 100% { transform: translateX(-100%); }
-        50% { transform: translateX(100%); }
-    }
-
     .news-header h1 {
         font-size: 3.5rem;
         font-weight: 900;
@@ -60,64 +31,17 @@
         justify-content: center;
         gap: 1rem;
         text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.3);
-        position: relative;
-        z-index: 1;
     }
 
     .news-header p {
         font-size: 1.3rem;
         opacity: 0.95;
-        margin: 0;
-        position: relative;
-        z-index: 1;
-        font-weight: 500;
-    }
-
-    .filter-section {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 16px;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    }
-
-    .filter-tabs {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-
-    .filter-tab {
-        padding: 0.875rem 2rem;
-        background: #f1f5f9;
-        border: 2px solid transparent;
-        border-radius: 50px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.3s;
-        color: #64748b;
-        font-size: 1rem;
-    }
-
-    .filter-tab:hover {
-        background: #e2e8f0;
-        border-color: #667eea;
-        color: #667eea;
-        transform: translateY(-2px);
-    }
-
-    .filter-tab.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        transform: translateY(-2px);
     }
 
     .news-grid {
         display: grid;
         gap: 2.5rem;
-        grid-template-columns: repeat(auto-fit, minmax(550px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
     }
 
     .news-card {
@@ -125,7 +49,7 @@
         border-radius: 24px;
         overflow: hidden;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.4s;
         position: relative;
         border: 1px solid #e2e8f0;
     }
@@ -159,14 +83,10 @@
     .news-card:hover {
         transform: translateY(-12px);
         box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
-        border-color: #667eea;
     }
 
     .news-card-header {
         padding: 2.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
         background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
         border-bottom: 2px solid #f1f5f9;
     }
@@ -175,16 +95,13 @@
         font-size: 1.85rem;
         font-weight: 900;
         color: #1e293b;
-        line-height: 1.3;
-        margin: 0;
-        letter-spacing: -0.5px;
+        margin: 0 0 1.25rem 0;
     }
 
     .news-badges {
         display: flex;
         flex-wrap: wrap;
         gap: 0.875rem;
-        align-items: center;
     }
 
     .badge {
@@ -192,406 +109,28 @@
         border-radius: 50px;
         font-size: 0.9rem;
         font-weight: 800;
-        white-space: nowrap;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.7rem;
         text-transform: uppercase;
         letter-spacing: 1px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     .badge-positive {
         background: linear-gradient(135deg, #10b981, #34d399);
         color: white;
-        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
     }
 
     .badge-negative {
         background: linear-gradient(135deg, #ef4444, #f87171);
         color: white;
-        box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
     }
 
     .badge-neutral {
         background: linear-gradient(135deg, #3b82f6, #60a5fa);
         color: white;
-        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
     }
 
     .badge-mixed {
         background: linear-gradient(135deg, #f59e0b, #fbbf24);
         color: white;
-        box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
-    }
-
-    .severity-low {
-        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-        color: #065f46;
-    }
-
-    .severity-medium {
-        background: linear-gradient(135deg, #fed7aa, #fbbf24);
-        color: #92400e;
-    }
-
-    .severity-high {
-        background: linear-gradient(135deg, #fecaca, #f87171);
-        color: #991b1b;
-    }
-
-    .severity-critical {
-        background: linear-gradient(135deg, #dc2626, #b91c1c);
-        color: white;
-        animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.85; }
-    }
-
-    .news-content {
-        padding: 0 2rem 2rem;
-        color: #475569;
-        font-size: 1.1rem;
-        line-height: 1.9;
-    }
-
-    .news-meta {
-        padding: 1.5rem 2rem;
-        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-        border-top: 2px solid #e2e8f0;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 2rem;
-        align-items: center;
-        font-size: 0.95rem;
-    }
-
-    .meta-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        color: #64748b;
-    }
-
-    .meta-icon {
-        font-size: 1.5rem;
-    }
-
-    .meta-item strong {
-        color: #1e293b;
-        font-weight: 700;
-    }
-
-    .affected-section {
-        padding: 1.5rem 2rem;
-        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-        border-top: 2px solid #bfdbfe;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 2rem;
-    }
-
-    .affected-group {
-        flex: 1;
-        min-width: 250px;
-    }
-
-    .affected-label {
-        font-size: 0.8rem;
-        color: #64748b;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .affected-items {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-    }
-
-    .affected-tag {
-        background: white;
-        color: #4f46e5;
-        padding: 0.6rem 1.25rem;
-        border-radius: 25px;
-        font-size: 0.95rem;
-        font-weight: 700;
-        border: 2px solid #e0e7ff;
-        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
-        transition: all 0.2s;
-    }
-
-    .affected-tag:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
-    }
-
-    .trading-hint {
-        padding: 1.5rem 2rem;
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        border-top: 2px solid #fcd34d;
-        display: flex;
-        align-items: flex-start;
-        gap: 1.25rem;
-    }
-
-    .trading-hint-icon {
-        font-size: 2rem;
-        flex-shrink: 0;
-        margin-top: 0.1rem;
-    }
-
-    .trading-hint-content {
-        flex: 1;
-    }
-
-    .trading-hint-title {
-        font-weight: 800;
-        color: #78350f;
-        margin-bottom: 0.75rem;
-        font-size: 1.15rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .trading-hint-text {
-        color: #92400e;
-        line-height: 1.8;
-        font-size: 1.05rem;
-    }
-
-    .no-news {
-        text-align: center;
-        padding: 6rem 2rem;
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    }
-
-    .no-news-icon {
-        font-size: 6rem;
-        margin-bottom: 2rem;
-        opacity: 0.5;
-        display: block;
-        animation: float 3s ease-in-out infinite;
-    }
-
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-    }
-
-    .no-news h2 {
-        font-size: 2.5rem;
-        color: #64748b;
-        margin-bottom: 1rem;
-        font-weight: 700;
-    }
-
-    .no-news p {
-        color: #94a3b8;
-        font-size: 1.25rem;
-        line-height: 1.8;
-    }
-
-    .timestamp {
-        color: #94a3b8;
-        font-size: 0.9rem;
-        font-style: italic;
-    }
-
-    @media (max-width: 768px) {
-        .news-header h1 {
-            font-size: 2rem;
-        }
-
-        .news-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .news-card-header {
-            padding: 1.5rem;
-        }
-
-        .news-title {
-            font-size: 1.35rem;
-        }
-
-        .news-content {
-            padding: 0 1.5rem 1.5rem;
-        }
-
-        .news-meta,
-        .affected-section,
-        .trading-hint {
-            padding: 1.25rem 1.5rem;
-        }
-
-        .news-meta {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="news-container">
-    <div class="news-header">
-        <h1>
-            <span>📰</span>
-            Market News & Events
-        </h1>
-        <p>Stay informed about market trends and make smarter trading decisions</p>
-    </div>
-
-    .news-grid {
-        display: grid;
-        gap: 2rem;
-        margin-bottom: 2rem;
-    }
-
-    .news-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-        transition: all 0.3s ease;
-        border-left: 6px solid #667eea;
-        position: relative;
-    }
-
-    .news-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
-    }
-
-    .news-card.positive {
-        border-left-color: #10b981;
-    }
-
-    .news-card.positive::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #10b981, #34d399);
-    }
-
-    .news-card.negative {
-        border-left-color: #ef4444;
-    }
-
-    .news-card.negative::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #ef4444, #f87171);
-    }
-
-    .news-card.neutral {
-        border-left-color: #3b82f6;
-    }
-
-    .news-card.neutral::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #3b82f6, #60a5fa);
-    }
-
-    .news-card.mixed {
-        border-left-color: #f59e0b;
-    }
-
-    .news-card.mixed::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #f59e0b, #fbbf24);
-    }
-
-    .news-card-header {
-        padding: 1.75rem 2rem 1.25rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 1.5rem;
-        flex-wrap: wrap;
-    }
-
-    .news-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0;
-        line-height: 1.4;
-        flex: 1;
-        min-width: 250px;
-    }
-
-    .news-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.6rem;
-        align-items: center;
-    }
-
-    .badge {
-        padding: 0.5rem 1rem;
-        border-radius: 25px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        white-space: nowrap;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .badge-positive {
-        background: linear-gradient(135deg, #10b981, #34d399);
-        color: white;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }
-
-    .badge-negative {
-        background: linear-gradient(135deg, #ef4444, #f87171);
-        color: white;
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-    }
-
-    .badge-neutral {
-        background: linear-gradient(135deg, #3b82f6, #60a5fa);
-        color: white;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-
-    .badge-mixed {
-        background: linear-gradient(135deg, #f59e0b, #fbbf24);
-        color: white;
-        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
     }
 
     .severity-low {
@@ -612,182 +151,173 @@
     .severity-critical {
         background: #dc2626;
         color: white;
-        animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.8; }
     }
 
     .news-content {
-        padding: 0 2rem 1.5rem;
+        padding: 0 2rem 2rem;
         color: #475569;
-        font-size: 1.05rem;
-        line-height: 1.8;
+        font-size: 1.1rem;
+        line-height: 1.9;
     }
 
     .news-meta {
         padding: 1.5rem 2rem;
         background: #f8fafc;
-        border-top: 1px solid #e2e8f0;
+        border-top: 2px solid #e2e8f0;
         display: flex;
         flex-wrap: wrap;
         gap: 2rem;
-        align-items: center;
         font-size: 0.95rem;
     }
 
     .meta-item {
         display: flex;
         align-items: center;
-        gap: 0.6rem;
+        gap: 0.75rem;
         color: #64748b;
-    }
-
-    .meta-icon {
-        font-size: 1.3rem;
     }
 
     .meta-item strong {
         color: #1e293b;
-        font-weight: 600;
+        font-weight: 700;
     }
 
     .affected-section {
-        padding: 1.25rem 2rem;
+        padding: 1.5rem 2rem;
         background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-        border-top: 1px solid #bfdbfe;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1.5rem;
+        border-top: 2px solid #bfdbfe;
     }
 
     .affected-group {
-        flex: 1;
-        min-width: 200px;
+        margin-bottom: 1rem;
     }
 
     .affected-label {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         color: #64748b;
-        font-weight: 600;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 0.75rem;
+        margin-bottom: 0.5rem;
     }
 
     .affected-items {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.6rem;
+        gap: 0.75rem;
     }
 
     .affected-tag {
         background: white;
         color: #4f46e5;
-        padding: 0.4rem 0.9rem;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        border: 2px solid #e0e7ff;
-        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
-    }
-
-    .trading-hint {
-        padding: 1.25rem 2rem;
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        border-top: 1px solid #fcd34d;
-        display: flex;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-
-    .trading-hint-icon {
-        font-size: 1.75rem;
-        flex-shrink: 0;
-        margin-top: 0.1rem;
-    }
-
-    .trading-hint-content {
-        flex: 1;
-    }
-
-    .trading-hint-title {
+        padding: 0.6rem 1.25rem;
+        border-radius: 25px;
+        font-size: 0.95rem;
         font-weight: 700;
-        color: #78350f;
-        margin-bottom: 0.5rem;
-        font-size: 1.05rem;
-    }
-
-    .trading-hint-text {
-        color: #92400e;
-        line-height: 1.6;
+        border: 2px solid #e0e7ff;
     }
 
     .no-news {
         text-align: center;
-        padding: 5rem 2rem;
+        padding: 6rem 2rem;
         background: white;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
     }
 
     .no-news-icon {
-        font-size: 5rem;
-        margin-bottom: 1.5rem;
-        opacity: 0.4;
-        display: block;
+        font-size: 6rem;
+        margin-bottom: 2rem;
+        opacity: 0.5;
     }
 
     .no-news h2 {
-        font-size: 2rem;
+        font-size: 2.5rem;
         color: #64748b;
-        margin-bottom: 0.75rem;
-        font-weight: 600;
+        margin-bottom: 1rem;
     }
 
     .no-news p {
         color: #94a3b8;
-        font-size: 1.15rem;
-        line-height: 1.6;
-    }
-
-    .timestamp {
-        color: #94a3b8;
-        font-size: 0.9rem;
-        font-style: italic;
+        font-size: 1.25rem;
     }
 
     @media (max-width: 768px) {
         .news-header h1 {
-            font-size: 1.8rem;
+            font-size: 2rem;
         }
-
-        .news-card-header {
-            flex-direction: column;
-            padding: 1.5rem;
+        .news-grid {
+            grid-template-columns: 1fr;
         }
-
         .news-title {
-            font-size: 1.25rem;
-        }
-
-        .news-content {
-            padding: 0 1.5rem 1.25rem;
-        }
-
-        .news-meta,
-        .affected-section,
-        .trading-hint {
-            padding: 1.25rem 1.5rem;
-        }
-
-        .news-meta {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
+            font-size: 1.35rem;
         }
     }
 </style>
+{% endblock %}
+
+{% block content %}
+<div class="news-container">
+    <div class="news-header">
+        <h1>
+            <span>📰</span>
+            Market News & Events
+        </h1>
+        <p>Stay informed about market trends and make smarter trading decisions</p>
+    </div>
+
+    {% if news_count == 0 %}
+        <div class="no-news">
+            <span class="no-news-icon">🕊️</span>
+            <h2>No market news right now</h2>
+            <p>Check back later or ask your admin to publish updates.</p>
+        </div>
+    {% else %}
+        <div class="news-grid">
+            {% for news in news_list %}
+                <article class="news-card {{ news.impact }}">
+                    <div class="news-card-header">
+                        <h3 class="news-title">{{ news.title }}</h3>
+                        <div class="news-badges">
+                            <span class="badge badge-{{ news.impact }}">{{ news.get_impact_display|default:news.impact|capfirst }}</span>
+                            <span class="badge severity-{{ news.severity|lower }}">{{ news.get_severity_display }}</span>
+                        </div>
+                    </div>
+                    <div class="news-content">{{ news.content|linebreaks }}</div>
+                    <div class="news-meta">
+                        <div class="meta-item">
+                            <span>📅</span>
+                            <strong>Published:</strong> {{ news.published_at|date:"M d, Y H:i" }}
+                        </div>
+                        <div class="meta-item">
+                            <span>⏱</span>
+                            <strong>Expires:</strong> {% if news.expires_at %}{{ news.expires_at|date:"M d, Y H:i" }}{% else %}—{% endif %}
+                        </div>
+                    </div>
+                    <div class="affected-section">
+                        <div class="affected-group">
+                            <div class="affected-label">Affected Sectors</div>
+                            <div class="affected-items">
+                                {% for s in news.affected_sectors %}
+                                    <span class="affected-tag">{{ s }}</span>
+                                {% empty %}
+                                    <span class="affected-tag">Market-wide</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="affected-group">
+                            <div class="affected-label">Affected Stocks</div>
+                            <div class="affected-items">
+                                {% for sym in news.affected_stocks %}
+                                    <span class="affected-tag">{{ sym }}</span>
+                                {% empty %}
+                                    <span class="affected-tag">—</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
 {% endblock %}
