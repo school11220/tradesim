@@ -31,7 +31,7 @@ jobs:
               --max-time 180 \
               --retry 2 \
               --retry-delay 5 \
-              "https://tradesim-lyart.vercel.app/api/update-prices-real")
+              "https://tradesim-lyart.vercel.app/api/update-prices?volatility=0.015")
             
             http_code=$(echo "$response" | tail -n1)
             body=$(echo "$response" | head -n-1)
