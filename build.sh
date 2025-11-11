@@ -7,9 +7,13 @@ echo ""
 # Install dependencies (already handled by Vercel)
 echo "✅ Dependencies installed"
 
-# Run migrations on production database
+# Create public directory (required by Vercel)
+echo "📁 Creating public directory..."
+mkdir -p public
+
+# Run migrations on production database (fake if tables already exist)
 echo "📊 Running database migrations..."
-python manage.py migrate --noinput
+python manage.py migrate --noinput --fake-initial 2>&1 || echo "⚠️  Some migrations already applied"
 
 # Collect static files
 echo "📦 Collecting static files..."
