@@ -216,6 +216,39 @@
         border: 2px solid #e0e7ff;
     }
 
+    .trading-hint {
+        padding: 1.5rem 2rem;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border-top: 2px solid #fcd34d;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .trading-hint-icon {
+        font-size: 2rem;
+        flex-shrink: 0;
+    }
+
+    .trading-hint-content {
+        flex: 1;
+    }
+
+    .trading-hint-title {
+        font-weight: 800;
+        color: #78350f;
+        margin-bottom: 0.5rem;
+        font-size: 1.05rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .trading-hint-text {
+        color: #92400e;
+        line-height: 1.7;
+        font-size: 1rem;
+    }
+
     .no-news {
         text-align: center;
         padding: 6rem 2rem;
@@ -274,11 +307,11 @@
     {% else %}
         <div class="news-grid">
             {% for news in news_list %}
-                <article class="news-card {{ news.impact }}">
+                <article class="news-card {{ news.impact_direction }}">
                     <div class="news-card-header">
                         <h3 class="news-title">{{ news.title }}</h3>
                         <div class="news-badges">
-                            <span class="badge badge-{{ news.impact }}">{{ news.get_impact_display|default:news.impact|capfirst }}</span>
+                            <span class="badge badge-{{ news.impact_direction }}">{{ news.get_impact_direction_display|default:news.impact_direction|capfirst }}</span>
                             <span class="badge severity-{{ news.severity|lower }}">{{ news.get_severity_display }}</span>
                         </div>
                     </div>
@@ -293,7 +326,9 @@
                             <strong>Expires:</strong> {% if news.expires_at %}{{ news.expires_at|date:"M d, Y H:i" }}{% else %}—{% endif %}
                         </div>
                     </div>
+                    {% if news.affected_sectors or news.affected_stocks %}
                     <div class="affected-section">
+                        {% if news.affected_sectors %}
                         <div class="affected-group">
                             <div class="affected-label">Affected Sectors</div>
                             <div class="affected-items">
@@ -304,6 +339,8 @@
                                 {% endfor %}
                             </div>
                         </div>
+                        {% endif %}
+                        {% if news.affected_stocks %}
                         <div class="affected-group">
                             <div class="affected-label">Affected Stocks</div>
                             <div class="affected-items">
@@ -314,7 +351,18 @@
                                 {% endfor %}
                             </div>
                         </div>
+                        {% endif %}
                     </div>
+                    {% endif %}
+                    {% if news.trading_hint %}
+                    <div class="trading-hint">
+                        <span class="trading-hint-icon">💡</span>
+                        <div class="trading-hint-content">
+                            <div class="trading-hint-title">Trading Hint</div>
+                            <div class="trading-hint-text">{{ news.trading_hint }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </article>
             {% endfor %}
         </div>
