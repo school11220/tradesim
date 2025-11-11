@@ -233,24 +233,24 @@
         <div class="portfolio-stats">
             <div class="stat-card">
                 <div class="stat-label">Total Portfolio Value</div>
-                <div class="stat-value">${{ portfolio_value|floatformat:2 }}</div>
+                <div class="stat-value">₹{{ portfolio_value|floatformat:2 }}</div>
                 <div class="stat-subtitle">Cash + Holdings</div>
             </div>
             
             <div class="stat-card">
                 <div class="stat-label">Available Cash</div>
-                <div class="stat-value">${{ balance|floatformat:2 }}</div>
+                <div class="stat-value">₹{{ balance|floatformat:2 }}</div>
             </div>
             
             <div class="stat-card">
                 <div class="stat-label">Holdings Value</div>
-                <div class="stat-value">${{ total_current_value|floatformat:2 }}</div>
+                <div class="stat-value">₹{{ total_current_value|floatformat:2 }}</div>
             </div>
             
             <div class="profit-loss-card">
                 <div class="stat-label">Total Profit/Loss</div>
                 <div class="profit-loss-value {% if total_profit_loss >= 0 %}positive{% else %}negative{% endif %}">
-                    {% if total_profit_loss >= 0 %}+{% endif %}${{ total_profit_loss|floatformat:2 }}
+                    {% if total_profit_loss >= 0 %}+{% endif %}₹{{ total_profit_loss|floatformat:2 }}
                     <div class="stat-subtitle">({{ total_profit_loss_percent|floatformat:2 }}%)</div>
                 </div>
             </div>
@@ -274,11 +274,11 @@
             <div class="summary-grid">
                 <div class="summary-card">
                     <div class="summary-label">Total Invested</div>
-                    <div class="summary-value">${{ total_invested|floatformat:2 }}</div>
+                    <div class="summary-value">₹{{ total_invested|floatformat:2 }}</div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-label">Current Value</div>
-                    <div class="summary-value">${{ total_current_value|floatformat:2 }}</div>
+                    <div class="summary-value">₹{{ total_current_value|floatformat:2 }}</div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-label">Number of Stocks</div>
@@ -287,7 +287,7 @@
                 <div class="summary-card" style="border-left-color: {% if total_profit_loss >= 0 %}#4caf50{% else %}#f44336{% endif %}">
                     <div class="summary-label">Net Gain/Loss</div>
                     <div class="summary-value" style="color: {% if total_profit_loss >= 0 %}#2e7d32{% else %}#c62828{% endif %}">
-                        {% if total_profit_loss >= 0 %}+{% endif %}${{ total_profit_loss|floatformat:2 }}
+                        {% if total_profit_loss >= 0 %}+{% endif %}₹{{ total_profit_loss|floatformat:2 }}
                     </div>
                 </div>
             </div>
@@ -313,12 +313,12 @@
                             <div class="name-cell">{{ holding.name }}</div>
                         </td>
                         <td style="text-align: right;">{{ holding.quantity }}</td>
-                        <td style="text-align: right;">${{ holding.avg_price|floatformat:2 }}</td>
-                        <td style="text-align: right;">${{ holding.current_price|floatformat:2 }}</td>
-                        <td style="text-align: right;">${{ holding.invested|floatformat:2 }}</td>
-                        <td style="text-align: right; font-weight: bold;">${{ holding.current_value|floatformat:2 }}</td>
+                        <td style="text-align: right;">₹{{ holding.avg_price|floatformat:2 }}</td>
+                        <td style="text-align: right;">₹{{ holding.current_price|floatformat:2 }}</td>
+                        <td style="text-align: right;">₹{{ holding.invested|floatformat:2 }}</td>
+                        <td style="text-align: right; font-weight: bold;">₹{{ holding.current_value|floatformat:2 }}</td>
                         <td style="text-align: right;" class="{% if holding.profit_loss >= 0 %}price-positive{% else %}price-negative{% endif %}">
-                            {% if holding.profit_loss >= 0 %}+{% endif %}${{ holding.profit_loss|floatformat:2 }}
+                            {% if holding.profit_loss >= 0 %}+{% endif %}₹{{ holding.profit_loss|floatformat:2 }}
                             <br>
                             <small>({{ holding.profit_loss_percent|floatformat:2 }}%)</small>
                         </td>
@@ -353,7 +353,7 @@
                 </div>
                 
                 <div style="margin-top: 20px; color: #999; font-size: 0.95rem;">
-                    Available Balance: <strong style="color: #4CAF50;">${{ balance|floatformat:2 }}</strong>
+                    Available Balance: <strong style="color: #4CAF50;">₹{{ balance|floatformat:2 }}</strong>
                 </div>
             </div>
         {% endif %}

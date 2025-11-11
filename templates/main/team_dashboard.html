@@ -356,28 +356,28 @@
         <div class="stat-card">
             <div class="stat-label">💼 Portfolio Value</div>
             <div class="stat-value {% if portfolio_value >= initial_capital %}positive{% else %}negative{% endif %}">
-                ${{ portfolio_value|floatformat:2 }}
+                ₹{{ portfolio_value|floatformat:2 }}
             </div>
         </div>
 
         <div class="stat-card">
             <div class="stat-label">💵 Available Cash</div>
             <div class="stat-value neutral">
-                ${{ balance|floatformat:2 }}
+                ₹{{ balance|floatformat:2 }}
             </div>
         </div>
 
         <div class="stat-card">
             <div class="stat-label">📊 Holdings Value</div>
             <div class="stat-value neutral">
-                ${{ holdings_value|floatformat:2 }}
+                ₹{{ holdings_value|floatformat:2 }}
             </div>
         </div>
 
         <div class="stat-card">
             <div class="stat-label">📈 Profit/Loss</div>
             <div class="stat-value {% if profit_loss >= 0 %}positive{% else %}negative{% endif %}">
-                {% if profit_loss >= 0 %}+{% endif %}${{ profit_loss|floatformat:2 }}
+                {% if profit_loss >= 0 %}+{% endif %}₹{{ profit_loss|floatformat:2 }}
             </div>
             <div class="stat-change {% if profit_loss >= 0 %}positive{% else %}negative{% endif %}">
                 {% if profit_loss_percent >= 0 %}+{% endif %}{{ profit_loss_percent|floatformat:2 }}%
@@ -408,7 +408,7 @@
             </div>
             <div class="event-field">
                 <div class="event-label">Initial Capital</div>
-                <div class="event-value positive">${{ initial_capital|floatformat:2 }}</div>
+                <div class="event-value positive">₹{{ initial_capital|floatformat:2 }}</div>
             </div>
         </div>
     </div>
@@ -437,21 +437,21 @@
                             {% if data.name %}<div class="stock-name">{{ data.name }}</div>{% endif %}
                         </td>
                         <td class="text-right" style="font-weight: 700;">{{ data.quantity }}</td>
-                        <td class="text-right">${{ data.avg_price|floatformat:2 }}</td>
+                        <td class="text-right">₹{{ data.avg_price|floatformat:2 }}</td>
                         <td class="text-right" style="font-weight: 700;">
                             {% if data.current_price %}
-                                ${{ data.current_price|floatformat:2 }}
+                                ₹{{ data.current_price|floatformat:2 }}
                             {% else %}
                                 —
                             {% endif %}
                         </td>
                         <td class="text-right" style="font-weight: 800; color: #3b82f6;">
-                            ${{ data.current_value|default:0|floatformat:2 }}
+                            ₹{{ data.current_value|default:0|floatformat:2 }}
                         </td>
                         <td class="text-right" style="font-weight: 800;">
                             {% if data.unrealized_pl is not None %}
                                 <div class="{% if data.unrealized_pl >= 0 %}positive{% else %}negative{% endif %}">
-                                    {% if data.unrealized_pl >= 0 %}+{% endif %}${{ data.unrealized_pl|floatformat:2 }}
+                                    {% if data.unrealized_pl >= 0 %}+{% endif %}₹{{ data.unrealized_pl|floatformat:2 }}
                                 </div>
                                 <div class="stat-change {% if data.unrealized_pl >= 0 %}positive{% else %}negative{% endif %}">
                                     {% if data.unrealized_pl_percent >= 0 %}+{% endif %}{{ data.unrealized_pl_percent|floatformat:2 }}%
@@ -503,8 +503,8 @@
                             <div class="stock-symbol">{{ trade.symbol }}</div>
                         </td>
                         <td class="text-right" style="font-weight: 700;">{{ trade.quantity }}</td>
-                        <td class="text-right">${{ trade.price|floatformat:2 }}</td>
-                        <td class="text-right" style="font-weight: 800;">${{ trade.total|floatformat:2 }}</td>
+                        <td class="text-right">₹{{ trade.price|floatformat:2 }}</td>
+                        <td class="text-right" style="font-weight: 800;">₹{{ trade.total|floatformat:2 }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

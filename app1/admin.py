@@ -44,7 +44,7 @@ class CustomUserAdmin(UserAdmin):
     def balance_display(self, obj):
         """Display balance with color coding"""
         color = 'green' if obj.balance >= 10000 else 'orange' if obj.balance >= 5000 else 'red'
-        balance_str = f'${obj.balance:,.2f}'
+        balance_str = f'₹{obj.balance:,.2f}'
         return format_html(
             '<strong style="color: {};">{}</strong>',
             color,
@@ -59,23 +59,23 @@ class CustomUserAdmin(UserAdmin):
         """Reset selected users' balance to default"""
         default_balance = SimulatorSettings.get_default_balance()
         count = queryset.update(balance=default_balance)
-        self.message_user(request, f'Reset balance to ${default_balance:,.2f} for {count} user(s).')
+        self.message_user(request, f'Reset balance to ₹{default_balance:,.2f} for {count} user(s).')
     reset_balance.short_description = "Reset balance to default"
 
     def add_bonus_1000(self, request, queryset):
-        """Add $1000 bonus to selected users"""
+        """Add ₹1000 bonus to selected users"""
         for user in queryset:
             user.balance += 1000
             user.save()
-        self.message_user(request, f'Added $1,000 bonus to {queryset.count()} user(s).')
+        self.message_user(request, f'Added ₹1,000 bonus to {queryset.count()} user(s).')
     add_bonus_1000.short_description = "Add 1000 dollar bonus"
 
     def add_bonus_5000(self, request, queryset):
-        """Add $5000 bonus to selected users"""
+        """Add ₹5000 bonus to selected users"""
         for user in queryset:
             user.balance += 5000
             user.save()
-        self.message_user(request, f'Added $5,000 bonus to {queryset.count()} user(s).')
+        self.message_user(request, f'Added ₹5,000 bonus to {queryset.count()} user(s).')
     add_bonus_5000.short_description = "Add 5000 dollar bonus"
 
 
@@ -119,7 +119,7 @@ class StockAdmin(admin.ModelAdmin):
     
     def current_price_display(self, obj):
         """Display current price formatted"""
-        return format_html('<strong style="color: #1e40af;">${}</strong>', f'{float(obj.current_price):.2f}')
+        return format_html('<strong style="color: #1e40af;">₹{}</strong>', f'{float(obj.current_price):.2f}')
     current_price_display.short_description = 'Current Price'
     
     def price_change_display(self, obj):
@@ -128,12 +128,12 @@ class StockAdmin(admin.ModelAdmin):
         change_pct = float(obj.price_change_percent)
         if change > 0:
             return format_html(
-                '<span style="color: green;">▲ +${} (+{}%)</span>',
+                '<span style="color: green;">▲ +₹{} (+{}%)</span>',
                 f'{change:.2f}', f'{change_pct:.2f}'
             )
         elif change < 0:
             return format_html(
-                '<span style="color: red;">▼ ${} ({}%)</span>',
+                '<span style="color: red;">▼ ₹{} ({}%)</span>',
                 f'{change:.2f}', f'{change_pct:.2f}'
             )
         return format_html('<span style="color: gray;">—</span>')
@@ -405,12 +405,12 @@ class TeamAdmin(admin.ModelAdmin):
             value = obj.portfolio_value
             color = 'green' if value >= float(obj.event.initial_capital) else 'red'
             return format_html(
-                '<strong style="color: {}; font-size: 1.1em;">${:,.2f}</strong>',
+                '<strong style="color: {}; font-size: 1.1em;">₹{:,.2f}</strong>',
                 color,
                 float(value)
             )
         except (ValueError, TypeError, AttributeError):
-            return format_html('<strong>$0.00</strong>')
+            return format_html('<strong>₹0.00</strong>')
     portfolio_value_display.short_description = 'Portfolio Value'
     
     def profit_loss_display(self, obj):
@@ -472,8 +472,8 @@ class TeamAdmin(admin.ModelAdmin):
                 <td style="color: {'green' if trade.get('type') == 'BUY' else 'red'};">{trade.get("type", "")}</td>
                 <td><strong>{trade.get("symbol", "")}</strong></td>
                 <td>{trade.get("quantity", 0)}</td>
-                <td>${trade.get("price", 0):.2f}</td>
-                <td>${trade.get("total", 0):.2f}</td>
+                <td>₹{trade.get("price", 0):.2f}</td>
+                <td>₹{trade.get("total", 0):.2f}</td>
             </tr>
             '''
         html += '</table>'

@@ -304,21 +304,21 @@
                 <div class="stock-name">{{ stock.name }}</div>
             </div>
             
-            <div class="current-price">${{ stock.current_price|floatformat:2 }}</div>
+            <div class="current-price">₹{{ stock.current_price|floatformat:2 }}</div>
             
             <span class="price-change {% if stock.price_change >= 0 %}positive{% else %}negative{% endif %}">
                 {% if stock.price_change >= 0 %}↑{% else %}↓{% endif %}
-                ${{ stock.price_change|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)
+                ₹{{ stock.price_change|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)
             </span>
             
             <div class="info-row">
                 <span class="info-label">Previous Close</span>
-                <span class="info-value">${{ stock.previous_close|floatformat:2 }}</span>
+                <span class="info-value">₹{{ stock.previous_close|floatformat:2 }}</span>
             </div>
             
             <div class="info-row">
                 <span class="info-label">Your Balance</span>
-                <span class="info-value">${{ balance|floatformat:2 }}</span>
+                <span class="info-value">₹{{ balance|floatformat:2 }}</span>
             </div>
             
             {% if holding.quantity > 0 %}
@@ -332,21 +332,21 @@
                 
                 <div class="info-row">
                     <span class="info-label">Average Price</span>
-                    <span class="info-value">${{ holding.avg_price|floatformat:2 }}</span>
+                    <span class="info-value">₹{{ holding.avg_price|floatformat:2 }}</span>
                 </div>
                 
                 <div class="info-row">
                     <span class="info-label">Invested</span>
-                    <span class="info-value">${{ invested_value|floatformat:2 }}</span>
+                    <span class="info-value">₹{{ invested_value|floatformat:2 }}</span>
                 </div>
                 
                 <div class="info-row">
                     <span class="info-label">Current Value</span>
-                    <span class="info-value">${{ current_value|floatformat:2 }}</span>
+                    <span class="info-value">₹{{ current_value|floatformat:2 }}</span>
                 </div>
                 
                 <div class="profit-loss {% if profit_loss >= 0 %}positive{% else %}negative{% endif %}">
-                    {% if profit_loss >= 0 %}+{% endif %}${{ profit_loss|floatformat:2 }}
+                    {% if profit_loss >= 0 %}+{% endif %}₹{{ profit_loss|floatformat:2 }}
                     ({{ profit_loss_percent|floatformat:2 }}%)
                 </div>
             </div>
@@ -373,7 +373,7 @@
                 <div class="calculation-box">
                     <div class="calc-row">
                         <span>Price per share:</span>
-                        <span>${{ stock.current_price|floatformat:2 }}</span>
+                        <span>₹{{ stock.current_price|floatformat:2 }}</span>
                     </div>
                     <div class="calc-row">
                         <span>Quantity:</span>
@@ -381,7 +381,7 @@
                     </div>
                     <div class="calc-row total">
                         <span>Total Cost:</span>
-                        <span id="buyTotal">${{ stock.current_price|floatformat:2 }}</span>
+                        <span id="buyTotal">₹{{ stock.current_price|floatformat:2 }}</span>
                     </div>
                 </div>
                 
@@ -401,7 +401,7 @@
                 <div class="calculation-box">
                     <div class="calc-row">
                         <span>Price per share:</span>
-                        <span>${{ stock.current_price|floatformat:2 }}</span>
+                        <span>₹{{ stock.current_price|floatformat:2 }}</span>
                     </div>
                     <div class="calc-row">
                         <span>Quantity:</span>
@@ -409,7 +409,7 @@
                     </div>
                     <div class="calc-row total">
                         <span>Total Revenue:</span>
-                        <span id="sellTotal">${{ stock.current_price|floatformat:2 }}</span>
+                        <span id="sellTotal">₹{{ stock.current_price|floatformat:2 }}</span>
                     </div>
                 </div>
                 

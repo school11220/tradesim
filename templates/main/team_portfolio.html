@@ -317,26 +317,26 @@
     <div class="summary-grid">
         <div class="summary-card">
             <div class="summary-label">Available Balance</div>
-            <div class="summary-value">${{ balance|floatformat:2 }}</div>
+            <div class="summary-value">₹{{ balance|floatformat:2 }}</div>
             <div class="summary-subtext">Cash available for trading</div>
         </div>
         
         <div class="summary-card">
             <div class="summary-label">Portfolio Value</div>
-            <div class="summary-value">${{ portfolio_value|floatformat:2 }}</div>
+            <div class="summary-value">₹{{ portfolio_value|floatformat:2 }}</div>
             <div class="summary-subtext">Current market value</div>
         </div>
         
         <div class="summary-card">
             <div class="summary-label">Total Investment</div>
-            <div class="summary-value">${{ total_invested|floatformat:2 }}</div>
+            <div class="summary-value">₹{{ total_invested|floatformat:2 }}</div>
             <div class="summary-subtext">Original cost basis</div>
         </div>
         
         <div class="summary-card {% if total_pl >= 0 %}success{% else %}danger{% endif %}">
             <div class="summary-label">Total P&L</div>
             <div class="summary-value {% if total_pl >= 0 %}gain-positive{% else %}gain-negative{% endif %}">
-                {% if total_pl >= 0 %}+{% endif %}${{ total_pl|floatformat:2 }}
+                {% if total_pl >= 0 %}+{% endif %}₹{{ total_pl|floatformat:2 }}
             </div>
             <div class="summary-subtext">
                 {% if total_pl >= 0 %}▲{% else %}▼{% endif %}
@@ -381,15 +381,15 @@
                         <div class="stock-name">{{ holding.name }}</div>
                     </td>
                     <td class="price-cell">{{ holding.quantity }}</td>
-                    <td class="price-cell">${{ holding.avg_price|floatformat:2 }}</td>
+                    <td class="price-cell">₹{{ holding.avg_price|floatformat:2 }}</td>
                     <td class="price-cell" data-current-price="{{ holding.current_price }}">
-                        ${{ holding.current_price|floatformat:2 }}
+                        ₹{{ holding.current_price|floatformat:2 }}
                     </td>
                     <td class="price-cell" data-market-value="{{ holding.market_value }}">
-                        ${{ holding.market_value|floatformat:2 }}
+                        ₹{{ holding.market_value|floatformat:2 }}
                     </td>
                     <td class="{% if holding.pl >= 0 %}gain-positive{% else %}gain-negative{% endif %}">
-                        {% if holding.pl >= 0 %}+{% endif %}${{ holding.pl|floatformat:2 }}
+                        {% if holding.pl >= 0 %}+{% endif %}₹{{ holding.pl|floatformat:2 }}
                         <div style="font-size: 0.875rem; margin-top: 2px;">
                             ({% if holding.pl >= 0 %}▲{% else %}▼{% endif %} {{ holding.pl_percent|floatformat:2 }}%)
                         </div>
@@ -442,13 +442,13 @@
                     
                     // Update current price
                     const priceCell = row.cells[3];
-                    priceCell.textContent = `$${stockData.price.toFixed(2)}`;
+                    priceCell.textContent = `₹${stockData.price.toFixed(2)}`;
                     priceCell.dataset.currentPrice = stockData.price;
                     
                     // Calculate new market value
                     const marketValue = quantity * stockData.price;
                     const marketValueCell = row.cells[4];
-                    marketValueCell.textContent = `$${marketValue.toFixed(2)}`;
+                    marketValueCell.textContent = `₹${marketValue.toFixed(2)}`;
                     marketValueCell.dataset.marketValue = marketValue;
                     
                     // Calculate P&L
@@ -475,7 +475,7 @@
                 
                 // Update portfolio value
                 const valueCard = document.querySelectorAll('.summary-value')[1];
-                if (valueCard) valueCard.textContent = `$${totalValue.toFixed(2)}`;
+                if (valueCard) valueCard.textContent = `₹${totalValue.toFixed(2)}`;
                 
                 // Update total P&L
                 const plCard = document.querySelectorAll('.summary-value')[3];

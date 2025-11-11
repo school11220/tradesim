@@ -353,7 +353,7 @@
         <div class="header-stats">
             <div class="stat-card">
                 <div class="stat-label">Available Balance</div>
-                <div class="stat-value">${{ balance|floatformat:2 }}</div>
+                <div class="stat-value">₹{{ balance|floatformat:2 }}</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Stocks Available</div>
@@ -410,14 +410,14 @@
             </div>
             
             <div class="stock-price" data-price="{{ stock.current_price }}">
-                ${{ stock.current_price|floatformat:2 }}
+                ₹{{ stock.current_price|floatformat:2 }}
             </div>
             
             <span class="price-change {% if stock.price_change >= 0 %}up{% else %}down{% endif %}">
                 {% if stock.price_change >= 0 %}
-                    ▲ ${{ stock.price_change|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)
+                    ▲ ₹{{ stock.price_change|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)
                 {% else %}
-                    ▼ ${{ stock.price_change|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)
+                    ▼ ₹{{ stock.price_change|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)
                 {% endif %}
             </span>
             
@@ -429,7 +429,7 @@
                 </div>
                 <div class="holdings-row">
                     <span class="holdings-label">Avg Cost:</span>
-                    <span class="holdings-value">${{ stock.avg_price|floatformat:2 }}</span>
+                    <span class="holdings-value">₹{{ stock.avg_price|floatformat:2 }}</span>
                 </div>
             </div>
             {% endif %}
@@ -505,7 +505,7 @@
                         const newPrice = stockData.price;
                         
                         // Update price
-                        priceEl.textContent = `$${newPrice.toFixed(2)}`;
+                        priceEl.textContent = `₹${newPrice.toFixed(2)}`;
                         priceEl.dataset.price = newPrice;
                         
                         // Update change

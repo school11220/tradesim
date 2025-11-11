@@ -12,11 +12,11 @@
 
 **Timeline:**
 ```
-Time 0:00  → AAPL = $230.00
-Time 0:05  → AAPL = $228.50 (-0.65%)
-Time 0:10  → AAPL = $231.20 (+1.18%)
-Time 0:15  → AAPL = $229.80 (-0.61%)
-Time 0:20  → AAPL = $232.10 (+1.00%)
+Time 0:00  → AAPL = ₹230.00
+Time 0:05  → AAPL = ₹228.50 (-0.65%)
+Time 0:10  → AAPL = ₹231.20 (+1.18%)
+Time 0:15  → AAPL = ₹229.80 (-0.61%)
+Time 0:20  → AAPL = ₹232.10 (+1.00%)
 ... continues every 5 minutes
 ```
 
@@ -25,9 +25,9 @@ Time 0:20  → AAPL = $232.10 (+1.00%)
 1. **GitHub Actions triggers** at :00, :05, :10, :15, :20, :25, etc.
 2. **Calls API:** `https://tradesim-lyart.vercel.app/api/update-prices?volatility=0.015`
 3. **Each stock:**
-   - Current price: $100
+   - Current price: ₹100
    - Random change: -1.5% to +1.5%
-   - New price: $98.50 to $101.50
+   - New price: ₹98.50 to ₹101.50
 4. **Database updated** with new prices
 5. **Teams see changes** immediately on next page refresh
 
@@ -52,10 +52,10 @@ Time 0:20  → AAPL = $232.10 (+1.00%)
 
 **Example:**
 ```
-12:00 PM - You set AAPL to $250 (was $230)
-12:05 PM - Auto-update: $250 → $248 (-0.8%)
-12:10 PM - Auto-update: $248 → $251 (+1.2%)
-12:15 PM - Auto-update: $251 → $249 (-0.8%)
+12:00 PM - You set AAPL to ₹250 (was ₹230)
+12:05 PM - Auto-update: ₹250 → ₹248 (-0.8%)
+12:10 PM - Auto-update: ₹248 → ₹251 (+1.2%)
+12:15 PM - Auto-update: ₹251 → ₹249 (-0.8%)
 ... continues from there
 ```
 
@@ -81,14 +81,14 @@ Time 0:20  → AAPL = $232.10 (+1.00%)
 **Example:**
 ```
 All Technology stocks:
-AAPL: $230 → $241.50 (+5%)
-MSFT: $380 → $399.00 (+5%)
-GOOGL: $150 → $157.50 (+5%)
+AAPL: ₹230 → ₹241.50 (+5%)
+MSFT: ₹380 → ₹399.00 (+5%)
+GOOGL: ₹150 → ₹157.50 (+5%)
 
 After 5 minutes (auto-update):
-AAPL: $241.50 → $239.80 (-0.7%)
-MSFT: $399.00 → $404.20 (+1.3%)
-GOOGL: $157.50 → $159.90 (+1.5%)
+AAPL: ₹241.50 → ₹239.80 (-0.7%)
+MSFT: ₹399.00 → ₹404.20 (+1.3%)
+GOOGL: ₹157.50 → ₹159.90 (+1.5%)
 ```
 
 **Use Case:** Simulate sector-wide market events
@@ -134,18 +134,18 @@ GOOGL: $157.50 → $159.90 (+1.5%)
 
 ### Stabilization Formula:
 
-**Your manual change:** +5% ($230 → $241.50)
+**Your manual change:** +5% (₹230 → ₹241.50)
 
 **Expected range after different times:**
 
 | Time Elapsed | Updates | Price Range | Notes |
 |--------------|---------|-------------|-------|
-| 0 minutes | 0 | $241.50 | Your exact price |
-| 5 minutes | 1 | $238-$245 | First auto-update |
-| 10 minutes | 2 | $235-$248 | More variation |
-| 30 minutes | 6 | $230-$255 | Significant drift |
-| 1 hour | 12 | $225-$265 | Wide range possible |
-| 2 hours | 24 | $210-$280 | Natural volatility |
+| 0 minutes | 0 | ₹241.50 | Your exact price |
+| 5 minutes | 1 | ₹238-₹245 | First auto-update |
+| 10 minutes | 2 | ₹235-₹248 | More variation |
+| 30 minutes | 6 | ₹230-₹255 | Significant drift |
+| 1 hour | 12 | ₹225-₹265 | Wide range possible |
+| 2 hours | 24 | ₹210-₹280 | Natural volatility |
 
 **"Stabilized" means:** Price has undergone enough updates that your manual change is now just part of the historical data. The market is moving naturally again.
 
@@ -211,16 +211,16 @@ Instead of manual prices, use **Market News**:
 
 **Steps:**
 1. Admin → Stocks → Search "AAPL"
-2. Current price: $230
-3. Set to: $207 (-10%)
+2. Current price: ₹230
+3. Set to: ₹207 (-10%)
 4. Save
 
 **Timeline:**
-- **00:00** - You save: $207
-- **00:05** - Auto: $204-$210 (±1.5% from $207)
-- **00:10** - Auto: $201-$213 (cumulative)
-- **00:30** - Auto: $195-$220 (6 updates, drifting)
-- **01:00** - Auto: $190-$230 (could return to original!)
+- **00:00** - You save: ₹207
+- **00:05** - Auto: ₹204-₹210 (±1.5% from ₹207)
+- **00:10** - Auto: ₹201-₹213 (cumulative)
+- **00:30** - Auto: ₹195-₹220 (6 updates, drifting)
+- **01:00** - Auto: ₹190-₹230 (could return to original!)
 
 **To keep it low:** Create negative news about Apple instead
 
@@ -276,11 +276,11 @@ Instead of manual prices, use **Market News**:
 **Workaround - Staged Manual Updates:**
 
 ```
-Hour 0:00 - Set AAPL to $230 (baseline)
-Hour 0:30 - Set AAPL to $238 (+3.5%)
-Hour 1:00 - Set AAPL to $246 (+7%)
-Hour 1:30 - Set AAPL to $254 (+10.4%)
-Hour 2:00 - Set AAPL to $262 (+14%)
+Hour 0:00 - Set AAPL to ₹230 (baseline)
+Hour 0:30 - Set AAPL to ₹238 (+3.5%)
+Hour 1:00 - Set AAPL to ₹246 (+7%)
+Hour 1:30 - Set AAPL to ₹254 (+10.4%)
+Hour 2:00 - Set AAPL to ₹262 (+14%)
 ```
 
 Each gets 30 minutes to stabilize, then you bump it again.
@@ -410,7 +410,7 @@ Each gets 30 minutes to stabilize, then you bump it again.
 
 **Timeline:**
 ```
-12:04:30 - You set price to $250
+12:04:30 - You set price to ₹250
 12:05:00 - Auto-update runs (30 seconds later!)
 12:05:01 - Your price replaced
 ```

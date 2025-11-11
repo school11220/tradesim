@@ -435,17 +435,17 @@
             </div>
             
             <div class="price-section">
-                <div class="current-price" id="currentPrice">${{ stock.current_price|floatformat:2 }}</div>
+                <div class="current-price" id="currentPrice">₹{{ stock.current_price|floatformat:2 }}</div>
                 
                 {% if stock.price_change >= 0 %}
                 <div class="price-badge up">
                     <span>↗</span>
-                    <span>+${{ stock.price_change|floatformat:2 }} (+{{ stock.price_change_percent|floatformat:2 }}%)</span>
+                    <span>+₹{{ stock.price_change|floatformat:2 }} (+{{ stock.price_change_percent|floatformat:2 }}%)</span>
                 </div>
                 {% else %}
                 <div class="price-badge down">
                     <span>↘</span>
-                    <span>${{ stock.price_change|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)</span>
+                    <span>₹{{ stock.price_change|floatformat:2 }} ({{ stock.price_change_percent|floatformat:2 }}%)</span>
                 </div>
                 {% endif %}
             </div>
@@ -453,12 +453,12 @@
             <div class="info-grid">
                 <div class="info-item">
                     <span class="info-label">Previous Close</span>
-                    <span class="info-value">${{ stock.previous_close|floatformat:2 }}</span>
+                    <span class="info-value">₹{{ stock.previous_close|floatformat:2 }}</span>
                 </div>
                 
                 <div class="info-item">
                     <span class="info-label">Available Balance</span>
-                    <span class="info-value" id="teamBalance">${{ balance|floatformat:2 }}</span>
+                    <span class="info-value" id="teamBalance">₹{{ balance|floatformat:2 }}</span>
                 </div>
             </div>
             
@@ -474,25 +474,25 @@
                     
                     <div class="holdings-item">
                         <span>Average Price</span>
-                        <span style="font-weight: 700;">${{ holding.avg_price|floatformat:2 }}</span>
+                        <span style="font-weight: 700;">₹{{ holding.avg_price|floatformat:2 }}</span>
                     </div>
                     
                     <div class="holdings-item">
                         <span>Invested Value</span>
-                        <span style="font-weight: 700;">${{ invested_value|floatformat:2 }}</span>
+                        <span style="font-weight: 700;">₹{{ invested_value|floatformat:2 }}</span>
                     </div>
                     
                     <div class="holdings-item">
                         <span>Current Value</span>
-                        <span style="font-weight: 700;">${{ current_value|floatformat:2 }}</span>
+                        <span style="font-weight: 700;">₹{{ current_value|floatformat:2 }}</span>
                     </div>
                 </div>
                 
                 <div class="pnl-display">
                     {% if profit_loss >= 0 %}
-                    💰 Profit: +${{ profit_loss|floatformat:2 }} (+{{ profit_loss_percent|floatformat:2 }}%)
+                    💰 Profit: +₹{{ profit_loss|floatformat:2 }} (+{{ profit_loss_percent|floatformat:2 }}%)
                     {% else %}
-                    📉 Loss: ${{ profit_loss|floatformat:2 }} ({{ profit_loss_percent|floatformat:2 }}%)
+                    📉 Loss: ₹{{ profit_loss|floatformat:2 }} ({{ profit_loss_percent|floatformat:2 }}%)
                     {% endif %}
                 </div>
             </div>
@@ -538,7 +538,7 @@
                 <div class="cost-summary">
                     <div class="cost-row">
                         <span class="cost-label">Price per Share</span>
-                        <span class="cost-value">${{ stock.current_price|floatformat:2 }}</span>
+                        <span class="cost-value">₹{{ stock.current_price|floatformat:2 }}</span>
                     </div>
                     <div class="cost-row">
                         <span class="cost-label">Shares</span>
@@ -546,7 +546,7 @@
                     </div>
                     <div class="cost-row total-row">
                         <span class="cost-label" style="font-size: 1.2rem;">Total Cost</span>
-                        <span class="cost-value" id="buyTotal">${{ stock.current_price|floatformat:2 }}</span>
+                        <span class="cost-value" id="buyTotal">₹{{ stock.current_price|floatformat:2 }}</span>
                     </div>
                 </div>
                 
@@ -586,7 +586,7 @@
                 <div class="cost-summary">
                     <div class="cost-row">
                         <span class="cost-label">Price per Share</span>
-                        <span class="cost-value">${{ stock.current_price|floatformat:2 }}</span>
+                        <span class="cost-value">₹{{ stock.current_price|floatformat:2 }}</span>
                     </div>
                     <div class="cost-row">
                         <span class="cost-label">Shares</span>
