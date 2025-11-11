@@ -1,216 +1,522 @@
-{% extends 'login/loginBase.html' %}
+{% extends 'main/team_base_new.html' %}
+
+{% block title %}{{ team_name }} - Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+        color: white;
+        padding: 2.5rem;
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 40px rgba(30, 64, 175, 0.3);
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 900;
+        margin-bottom: 0.5rem;
+    }
+
+    .team-code {
+        font-family: 'Courier New', monospace;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.3rem 0.8rem;
+        border-radius: 8px;
+        font-weight: 700;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: 2px solid;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-color: #10b981;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border-color: #3b82f6;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-tertiary {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        border-color: #8b5cf6;
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+
+    .btn-tertiary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s;
+        border: 2px solid transparent;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        border-color: #e0e7ff;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #64748b;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 900;
+        margin: 0;
+    }
+
+    .stat-change {
+        font-size: 0.875rem;
+        font-weight: 700;
+        margin-top: 0.25rem;
+    }
+
+    .positive { color: #10b981; }
+    .negative { color: #ef4444; }
+    .neutral { color: #6366f1; }
+
+    .section-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .section-title {
+        font-size: 1.75rem;
+        font-weight: 900;
+        color: #1e293b;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .event-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+        border-radius: 12px;
+    }
+
+    .event-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .event-label {
+        font-size: 0.875rem;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .event-value {
+        font-size: 1.125rem;
+        color: #1e293b;
+        font-weight: 700;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+
+    .data-table thead {
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    }
+
+    .data-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 700;
+        color: #475569;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .data-table th.text-right {
+        text-align: right;
+    }
+
+    .data-table td {
+        padding: 1rem;
+        border-top: 1px solid #e2e8f0;
+        color: #1e293b;
+    }
+
+    .data-table td.text-right {
+        text-align: right;
+    }
+
+    .data-table tbody tr {
+        transition: background 0.2s;
+    }
+
+    .data-table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .stock-symbol {
+        font-weight: 800;
+        color: #6366f1;
+        font-size: 1.1rem;
+    }
+
+    .stock-name {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+    }
+
+    .trade-badge {
+        padding: 0.4rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .trade-buy {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #065f46;
+    }
+
+    .trade-sell {
+        background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+        color: #991b1b;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #64748b;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .empty-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-text {
+        font-size: 1.125rem;
+    }
+
+    .alert-box {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 2px solid #fbbf24;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .alert-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .alert-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #78350f;
+        margin-bottom: 0.5rem;
+    }
+
+    .alert-text {
+        color: #92400e;
+        font-size: 1.125rem;
+    }
+
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 1.75rem;
+        }
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .action-buttons {
+            flex-direction: column;
+        }
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-
-<div class="min-h-screen py-8 px-4">
-    <div class="max-w-7xl mx-auto">
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-4xl font-bold gradient-text mb-2">{{ team_name }}</h1>
-                <p class="text-slate-400">Team Code: <span class="text-purple-400 font-mono">{{ team_code }}</span></p>
-            </div>
-            <div class="flex gap-3">
-                <a href="{% url 'team_stocks' %}" 
-                   class="px-6 py-2 bg-purple-500/20 border border-purple-500 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors">
-                    📈 Browse Stocks
-                </a>
-                <a href="{% url 'team_portfolio' %}" 
-                   class="px-6 py-2 bg-blue-500/20 border border-blue-500 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors">
-                    💼 Portfolio
-                </a>
-                <a href="{% url 'team_logout' %}" 
-                   class="px-6 py-2 bg-red-500/20 border border-red-500 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">
-                    Logout
-                </a>
-            </div>
-        </div>
-
-        {% if error %}
-        <!-- Error/Inactive Event Message -->
-        <div class="glass-effect rounded-2xl p-8 text-center mb-6">
-            <div class="text-6xl mb-4">⏸️</div>
-            <h3 class="text-2xl font-bold text-orange-400 mb-4">{{ error }}</h3>
-            <p class="text-slate-300 mb-4">Event Status: <strong>{{ event_status }}</strong></p>
-            <p class="text-slate-400">Trading will be available when the event is active.</p>
-        </div>
-        {% endif %}
-
-        <!-- Portfolio Overview -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-            <!-- Total Portfolio Value -->
-            <div class="glass-effect rounded-xl p-6">
-                <div class="text-sm text-slate-400 mb-2">💼 Portfolio Value</div>
-                <div class="text-2xl font-bold {% if portfolio_value >= initial_capital %}text-green-400{% else %}text-red-400{% endif %}">
-                    ${{ portfolio_value|floatformat:2 }}
-                </div>
-            </div>
-
-            <!-- Available Cash -->
-            <div class="glass-effect rounded-xl p-6">
-                <div class="text-sm text-slate-400 mb-2">💵 Available Cash</div>
-                <div class="text-2xl font-bold text-purple-400">
-                    ${{ balance|floatformat:2 }}
-                </div>
-            </div>
-
-            <!-- Holdings Value -->
-            <div class="glass-effect rounded-xl p-6">
-                <div class="text-sm text-slate-400 mb-2">📊 Holdings Value</div>
-                <div class="text-2xl font-bold text-blue-400">
-                    ${{ holdings_value|floatformat:2 }}
-                </div>
-            </div>
-
-            <!-- Profit/Loss -->
-            <div class="glass-effect rounded-xl p-6">
-                <div class="text-sm text-slate-400 mb-2">📈 Profit/Loss</div>
-                <div class="text-2xl font-bold {% if profit_loss >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
-                    {% if profit_loss >= 0 %}+{% endif %}${{ profit_loss|floatformat:2 }}
-                </div>
-                <div class="text-xs {% if profit_loss >= 0 %}text-green-400{% else %}text-red-400{% endif %} mt-1">
-                    {% if profit_loss_percent >= 0 %}+{% endif %}{{ profit_loss_percent|floatformat:2 }}%
-                </div>
-            </div>
-
-            <!-- Total Trades -->
-            <div class="glass-effect rounded-xl p-6">
-                <div class="text-sm text-slate-400 mb-2">🔄 Total Trades</div>
-                <div class="text-2xl font-bold text-orange-400">
-                    {{ total_trades }}
-                </div>
-            </div>
-        </div>
-
-        <!-- Event Information -->
-        <div class="glass-effect rounded-xl p-6 mb-8">
-            <h2 class="text-2xl font-bold text-slate-200 mb-4">Event Details</h2>
-            <div class="grid md:grid-cols-3 gap-6">
-                <div>
-                    <div class="text-sm text-slate-300 mb-1">Event Name</div>
-                    <div class="text-lg font-semibold text-white">{{ event.name }}</div>
-                </div>
-                <div>
-                    <div class="text-sm text-slate-300 mb-1">Event Period</div>
-                    <div class="text-lg text-white">
-                        {{ event.start_time|date:"M d, Y H:i" }} - {{ event.end_time|date:"M d, Y H:i" }}
-                    </div>
-                </div>
-                <div>
-                    <div class="text-sm text-slate-300 mb-1">Initial Capital</div>
-                    <div class="text-lg font-semibold text-green-300">${{ initial_capital|floatformat:2 }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Current Holdings -->
-        <div class="glass-effect rounded-xl p-6 mb-8">
-            <h2 class="text-2xl font-bold text-white mb-4">Current Holdings</h2>
-            {% if portfolio %}
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-slate-600">
-                            <th class="text-left py-3 px-4 text-slate-300 font-semibold">Symbol</th>
-                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Shares</th>
-                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Avg Price</th>
-                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Current Price</th>
-                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Current Value</th>
-                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Profit/Loss</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for symbol, data in portfolio.items %}
-                        <tr class="border-b border-slate-700 hover:bg-slate-700/50 transition-colors">
-                            <td class="py-3 px-4">
-                                <div class="font-bold text-purple-300">{{ symbol }}</div>
-                                {% if data.name %}<div class="text-xs text-slate-300">{{ data.name }}</div>{% endif %}
-                            </td>
-                            <td class="py-3 px-4 text-right text-white">{{ data.quantity }}</td>
-                            <td class="py-3 px-4 text-right text-white">${{ data.avg_price|floatformat:2 }}</td>
-                            <td class="py-3 px-4 text-right text-white">
-                                {% if data.current_price %}
-                                    ${{ data.current_price|floatformat:2 }}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td class="py-3 px-4 text-right font-semibold text-blue-300">
-                                ${{ data.current_value|default:0|floatformat:2 }}
-                            </td>
-                            <td class="py-3 px-4 text-right font-semibold">
-                                {% if data.unrealized_pl is not None %}
-                                    <div class="{% if data.unrealized_pl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
-                                        {% if data.unrealized_pl >= 0 %}+{% endif %}${{ data.unrealized_pl|floatformat:2 }}
-                                    </div>
-                                    <div class="text-xs {% if data.unrealized_pl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
-                                        {% if data.unrealized_pl_percent >= 0 %}+{% endif %}{{ data.unrealized_pl_percent|floatformat:2 }}%
-                                    </div>
-                                {% else %}
-                                    <div class="text-slate-400">-</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="text-center py-8 text-slate-300">
-                <div class="text-4xl mb-4">📊</div>
-                <p>No holdings yet. Start trading to build your portfolio!</p>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Recent Trades -->
-        <div class="glass-effect rounded-xl p-6">
-            <h2 class="text-2xl font-bold text-white mb-4">Recent Trades</h2>
-            {% if recent_trades %}
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-slate-600">
-                            <th class="text-left py-3 px-4 text-slate-300 font-semibold">Time</th>
-                            <th class="text-left py-3 px-4 text-slate-300 font-semibold">Type</th>
-                            <th class="text-left py-3 px-4 text-slate-300 font-semibold">Symbol</th>
-                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Quantity</th>
-                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Price</th>
-                            <th class="text-right py-3 px-4 text-slate-300 font-semibold">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for trade in recent_trades reversed %}
-                        <tr class="border-b border-slate-700 hover:bg-slate-700/50 transition-colors">
-                            <td class="py-3 px-4 text-slate-100 text-sm">{{ trade.time }}</td>
-                            <td class="py-3 px-4">
-                                <span class="px-2 py-1 rounded text-xs font-semibold 
-                                    {% if trade.type == 'BUY' %}bg-green-500/20 text-green-300{% else %}bg-red-500/20 text-red-300{% endif %}">
-                                    {{ trade.type }}
-                                </span>
-                            </td>
-                            <td class="py-3 px-4 font-bold text-purple-300">{{ trade.symbol }}</td>
-                            <td class="py-3 px-4 text-right text-white">{{ trade.quantity }}</td>
-                            <td class="py-3 px-4 text-right text-white">${{ trade.price|floatformat:2 }}</td>
-                            <td class="py-3 px-4 text-right font-semibold text-white">${{ trade.total|floatformat:2 }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="text-center py-8 text-slate-300">
-                <div class="text-4xl mb-4">📈</div>
-                <p>No trades yet. Start trading when the event is active!</p>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Privacy Notice -->
-        <div class="mt-8 text-center text-sm text-slate-300">
-            <p>🔒 This dashboard shows only your team's data. Other teams cannot see your portfolio or trades.</p>
+<div class="dashboard-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>{{ team_name }}</h1>
+        <p>Team Code: <span class="team-code">{{ team_code }}</span></p>
+        <div class="action-buttons">
+            <a href="{% url 'team_stocks' %}" class="btn btn-primary">
+                📈 Browse Stocks
+            </a>
+            <a href="{% url 'team_portfolio' %}" class="btn btn-secondary">
+                💼 My Portfolio
+            </a>
+            <a href="{% url 'team_news' %}" class="btn btn-tertiary">
+                📰 Market News
+            </a>
         </div>
     </div>
-</div>
 
+    {% if error %}
+    <!-- Error/Inactive Event Alert -->
+    <div class="alert-box">
+        <div class="alert-icon">⏸️</div>
+        <div class="alert-title">{{ error }}</div>
+        <p class="alert-text">Event Status: <strong>{{ event_status }}</strong></p>
+        <p class="alert-text" style="margin-top: 0.5rem;">Trading will be available when the event is active.</p>
+    </div>
+    {% endif %}
+
+    <!-- Portfolio Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">💼 Portfolio Value</div>
+            <div class="stat-value {% if portfolio_value >= initial_capital %}positive{% else %}negative{% endif %}">
+                ${{ portfolio_value|floatformat:2 }}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">💵 Available Cash</div>
+            <div class="stat-value neutral">
+                ${{ balance|floatformat:2 }}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">📊 Holdings Value</div>
+            <div class="stat-value neutral">
+                ${{ holdings_value|floatformat:2 }}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">📈 Profit/Loss</div>
+            <div class="stat-value {% if profit_loss >= 0 %}positive{% else %}negative{% endif %}">
+                {% if profit_loss >= 0 %}+{% endif %}${{ profit_loss|floatformat:2 }}
+            </div>
+            <div class="stat-change {% if profit_loss >= 0 %}positive{% else %}negative{% endif %}">
+                {% if profit_loss_percent >= 0 %}+{% endif %}{{ profit_loss_percent|floatformat:2 }}%
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">🔄 Total Trades</div>
+            <div class="stat-value neutral">
+                {{ total_trades }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Details -->
+    <div class="section-card">
+        <h2 class="section-title">📅 Event Details</h2>
+        <div class="event-info">
+            <div class="event-field">
+                <div class="event-label">Event Name</div>
+                <div class="event-value">{{ event.name }}</div>
+            </div>
+            <div class="event-field">
+                <div class="event-label">Event Period</div>
+                <div class="event-value">
+                    {{ event.start_time|date:"M d, Y H:i" }} - {{ event.end_time|date:"M d, Y H:i" }}
+                </div>
+            </div>
+            <div class="event-field">
+                <div class="event-label">Initial Capital</div>
+                <div class="event-value positive">${{ initial_capital|floatformat:2 }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Holdings -->
+    <div class="section-card">
+        <h2 class="section-title">📊 Current Holdings</h2>
+        {% if portfolio %}
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th class="text-right">Shares</th>
+                        <th class="text-right">Avg Price</th>
+                        <th class="text-right">Current Price</th>
+                        <th class="text-right">Current Value</th>
+                        <th class="text-right">Profit/Loss</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for symbol, data in portfolio.items %}
+                    <tr>
+                        <td>
+                            <div class="stock-symbol">{{ symbol }}</div>
+                            {% if data.name %}<div class="stock-name">{{ data.name }}</div>{% endif %}
+                        </td>
+                        <td class="text-right" style="font-weight: 700;">{{ data.quantity }}</td>
+                        <td class="text-right">${{ data.avg_price|floatformat:2 }}</td>
+                        <td class="text-right" style="font-weight: 700;">
+                            {% if data.current_price %}
+                                ${{ data.current_price|floatformat:2 }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td class="text-right" style="font-weight: 800; color: #3b82f6;">
+                            ${{ data.current_value|default:0|floatformat:2 }}
+                        </td>
+                        <td class="text-right" style="font-weight: 800;">
+                            {% if data.unrealized_pl is not None %}
+                                <div class="{% if data.unrealized_pl >= 0 %}positive{% else %}negative{% endif %}">
+                                    {% if data.unrealized_pl >= 0 %}+{% endif %}${{ data.unrealized_pl|floatformat:2 }}
+                                </div>
+                                <div class="stat-change {% if data.unrealized_pl >= 0 %}positive{% else %}negative{% endif %}">
+                                    {% if data.unrealized_pl_percent >= 0 %}+{% endif %}{{ data.unrealized_pl_percent|floatformat:2 }}%
+                                </div>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📊</div>
+            <div class="empty-title">No Holdings Yet</div>
+            <p class="empty-text">Start trading to build your portfolio!</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Trades -->
+    <div class="section-card">
+        <h2 class="section-title">🔄 Recent Trades</h2>
+        {% if recent_trades %}
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>Symbol</th>
+                        <th class="text-right">Quantity</th>
+                        <th class="text-right">Price</th>
+                        <th class="text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trade in recent_trades reversed %}
+                    <tr>
+                        <td style="font-size: 0.875rem;">{{ trade.time }}</td>
+                        <td>
+                            <span class="trade-badge {% if trade.type == 'BUY' %}trade-buy{% else %}trade-sell{% endif %}">
+                                {{ trade.type }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="stock-symbol">{{ trade.symbol }}</div>
+                        </td>
+                        <td class="text-right" style="font-weight: 700;">{{ trade.quantity }}</td>
+                        <td class="text-right">${{ trade.price|floatformat:2 }}</td>
+                        <td class="text-right" style="font-weight: 800;">${{ trade.total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📈</div>
+            <div class="empty-title">No Trades Yet</div>
+            <p class="empty-text">Start trading when the event is active!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}
